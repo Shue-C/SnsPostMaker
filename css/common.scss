@@ -1,0 +1,455 @@
+$pc: 1024px; // PC
+$tab: 768px; // タブレット
+$sp: 375px;  // スマホ
+
+@mixin pc {
+  @media (max-width: ($pc)) {
+    @content;
+  }
+}
+@mixin tab {
+  @media (max-width: ($tab)) {
+    @content;
+  }
+}
+@mixin sp {
+  @media (max-width: ($sp)) {
+    @content;
+  }
+}
+
+html {
+	font-size: 62.5%;
+}
+@media (max-width: 750px) {
+	html {
+	  font-size: 2.66vw;/* 10/375*100 */
+	}
+}
+body {
+	color: #666;
+  	font-family: "Helvetica Neue",
+    Arial,
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    Meiryo,
+    sans-serif;
+	font-style: normal;
+	font-weight: normal;
+	font-size: 1.6rem;
+	text-align: center;
+	position: relative;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	border: none;
+}
+.wrapper {
+	margin: 0 auto;
+	max-width: 750px;
+	padding-bottom: 10vh;
+	position: relative;
+}
+
+/* Post page */	
+#postPage {
+	background-color: #E7F3F3;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight: 600;
+}
+
+h1 {
+	background-color: #A1E1DC;
+	padding: 14px 14px 2px;
+	img {
+		width: 100%;
+		max-width: 224px;
+	}
+}
+h2 {
+	color: #309898;
+	background-color: #D5EFEC;
+	padding: 12px 12px;
+	letter-spacing: .1rem;
+}
+
+input, textarea, select {
+	border: #8CD6B7 1px solid;
+	color: #666;
+	padding: 1.4rem;
+}
+input, textarea, button, select {
+	border-radius: 6px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+	background-color: #E7FBF2;
+}
+button {
+	background-color: #309898;
+	color: #fff;
+	font-weight: 600;
+	letter-spacing: 0.08rem;
+	padding: 1.4rem 2.6rem;
+
+	&.button {
+		&--light {
+			background-color: #6BC8C8;
+		}
+		&--copy {
+			margin-bottom: 12px;
+			@include sp {
+				width: 100%;
+			};
+		}
+		&--alert {
+			background-color: #D5EFEC;
+			color: #309898;
+		}
+		&--comit {
+			background-color: #DF9758;
+			min-width: 300px;
+			@include sp {
+				width: 100%;
+				margin: 0 0 40px;
+			};
+		}
+	}
+}
+
+.editBox {
+	padding: 12px 10px 20px;
+}
+
+.textBox {
+	position: relative;
+
+	&--tw,
+	&--in {
+		@extend .textBox;
+		margin-bottom: 2px;
+	}
+	textarea {
+		width: 100%;
+		padding-bottom: 3.2rem;
+	}
+}
+.postDate {
+	bottom: 12px;
+	color: #A4A4A4;
+	font-size: 1.4rem;
+	left: 12px;
+	position: absolute;
+}
+.postTextL {
+	bottom: 12px;
+	color: #309898;
+	font-weight: 600;
+	right: 12px;
+	position: absolute;
+}
+
+.dataBox {
+	display: flex;
+	flex-wrap: wrap;
+	button {
+		width: calc(97% / 4);
+		margin-bottom: 1%;
+		margin-left: 1%;
+		&:first-child {
+			margin-left: 0;
+		}
+
+		@include sp {
+			width: calc(98% / 3);
+			&:last-child {
+				margin-left: 0;
+				width: 100%;
+			}
+		}
+	}
+}
+
+
+/* Login page */
+#Login_page {
+	background-color: rgba(161,225,220,1);
+
+	.wrapper {
+		height:100vh;
+		overflow-y: auto;
+	}
+}
+.mediaViewInfo {
+	--web-view-name: Login page;
+	--web-view-id: Login_page;
+	--web-scale-on-resize: true;
+	--web-enable-deep-linking: true;
+}
+:root {
+	--web-view-ids: Login_page;
+}
+
+#Login_page {
+	overflow: hidden;
+	--web-view-name: Login page;
+	--web-view-id: Login_page;
+	--web-scale-on-resize: true;
+	--web-enable-deep-linking: true;
+	text-align: center;
+}
+
+#vue_logo_w {
+	width: 260px;
+	height: 278.417px;
+	margin-top: 10vh;
+}
+
+.loginPwForm {
+	display: block;
+	letter-spacing: 0.04rem;
+	border: 1px solid #8CD6B7;
+	width: 260px;
+	margin: 10vh auto 0;
+}
+
+#Login {
+	margin-top: 1vh;
+	width: 260px;
+}
+
+/* Footer */
+#n_SNS_Post_Maker {
+	bottom: 2vh;
+	color: #558D8D;
+	letter-spacing: 0.5px;
+	position: absolute;
+	text-align: center;
+	width: 100%;
+}
+
+/* alert box */
+.alert {
+	background-color: #309898;
+	border-radius: 8px;
+	color: #fff;
+	letter-spacing: .08rem;
+	padding: 30px 12px 22px;
+	position: fixed;
+	top: 14px;
+	z-index: 99;
+
+	&Title {
+		font-weight: 600;
+		margin-bottom: 20px;
+	}
+}
+.postCompBox {
+	width: 320px;
+	left: calc(50% - 160px);
+}
+
+/* modal */
+.modal {
+	align-items: center;
+	display: flex;
+	background-color: rgba(0,0,0,0.8);
+	height: 100vh;
+	left: 0;
+	position: fixed;
+	top: 0;
+	width: 100vw;
+	z-index: 99;
+
+	&Title {
+		color: #558D8D;
+	}
+
+	&Wrap {
+		background-color: #D5EFEC;
+		border-radius: 8px;
+		margin: 0 auto;
+		max-height: 88vh;
+		max-width: 500px;
+		overflow-y: auto;
+		padding: 22px;
+		width: 80vw;
+	}
+}
+.postTemp,
+.postHash,
+.postSche {
+	&__cont {
+		margin-top: 12px;
+		text-align: left;
+
+		h4 {
+			margin-bottom: 4px;
+		}
+		p {
+			font-size: 1.3rem;
+		}
+	}
+}
+.postHash {
+	&__cont {
+		p {
+			color: #309898;
+		}
+	}
+}
+
+.postSche {
+	.scheFix {
+		font-weight: 600;
+		margin: 14px 0;
+	}
+	.scheDay,
+	.scheTimeH,
+	.scheTimeM {
+		color: #309898;
+		display: inline-block;
+		font-size: 2em;
+		margin: 0 4px;
+	}
+	.scheTimeS {
+		color: #309898;
+		display: inline-block;
+		font-size: 1.8em;
+	}
+	.scheDay {
+		&__select {
+			margin-bottom: 10px;
+		}
+	}
+}
+
+
+/* global */
+.disp {
+	&--none {
+		display: none;
+	}
+}
+
+
+/* Twitter */
+.previewPage {
+	background: #fff;
+}
+.twPreview {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-bottom: none;
+	display: flex;
+	margin: 0 auto;
+	max-width: 570px;
+	padding: 12px 12px 20px;
+	text-align: left;
+
+	@include sp {
+		border: none;
+		max-width: none;
+		width: 100%;
+	}
+
+	.twIcon {
+		width: 50px;
+		height: 50px;
+		border-radius: 25px;
+		overflow: hidden;
+
+		img {
+			width: 104%;
+			height: auto;
+		}
+	}
+
+	&__user {
+		display: flex;
+		margin: 4px 0 6px;
+		&Name {
+			font-weight: 600;
+		}
+		&Id {
+			color: #999;
+			margin-left: .6rem;
+		}
+	}
+
+	.twCont {
+		width: calc(100% - 50px);
+		margin-left: 12px;
+	}
+	&__text {
+		white-space: pre-wrap;
+		span {
+			color: #00bbbb;
+		}
+	}
+	&__img {
+		border-radius: 16px;
+		margin-top: 10px;
+		overflow: hidden;
+		img {
+			width: 100%;
+		}
+	}
+}
+
+/* Instagram */
+.inPreview {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-top: none;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 20px;
+	padding: 12px 0 20px;
+	text-align: left;
+	max-width: 370px;
+
+	@include sp {
+		border: none;
+		max-width: none;
+		width: 100%;
+	}
+
+	&__user {
+		align-items: center;
+		display: flex;
+		padding: 0 14px;
+
+		&Name {
+			font-weight: 600;
+			margin-left: 10px;
+		}
+	}
+	.inIcon {
+		width: 30px;
+		height: 30px;
+		border-radius: 15px;
+		overflow: hidden;
+
+		img {
+			width: 102%;
+			height: auto;
+		}
+	}
+
+	&__img {
+		margin-top: 10px;
+		img {
+			width: 100%;
+			display: block;
+		}
+	}
+	&__text {
+		padding: 4px 14px 14px;
+	}
+}

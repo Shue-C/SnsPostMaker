@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post tool｜SNS Post Maker</title>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.18.1/build/cssreset/cssreset-min.css">
+    <link rel="stylesheet" type="text/css" id="applicationStylesheet" href="css/common.css" />
+    <script id="applicationScript" type="text/javascript" src="js/common.js"></script>
+</head>
+
+<body id="postPage">
+    <div id="top" class="wrapper">
+        <header>
+            <h1><img src="img/vue_logo_s.png" alt="SNS Post Maker"></h1>
+        </header>
+        <form action="">
+        <main class="editPage">
+                <section>
+                    <h2>Twitterの投稿内容</h2>
+                    <div class="editBox">
+                        <div class="textBox--tw">
+                            <textarea name="twText" id="twText" cols="30" rows="10"></textarea>
+                            <p class="postDate">毎月 <span class="postDay">X</span>日 <span class="postTime">21:00</span>
+                            </p>
+                            <p class="postTextL">41</p>
+                        </div>
+                        <div class="dataBox">
+                            <button id="twTemplate" class="button--normal">Template</button>
+                            <button id="twHashtag" class="button--normal">Hashtag</button>
+                            <button id="twSchedule" class="button--normal">Schedule</button>
+                            <button id="twImg" class="button--normal">Images (<span class="postImgL">0</span>)</button>
+                        </div>
+                        <button id="twCopy" class="button--light button--copy">Instagramの投稿内容をコピーする</button>
+                    </div>
+                </section>
+                <section>
+                    <h2>Instagramの投稿内容</h2>
+                    <div class="editBox">
+                        <button id="InCopy" class="button--light button--copy">Twitterの投稿内容をコピーする</button>
+                        <div class="textBox--in">
+                            <textarea name="InText" id="InText" cols="30" rows="10"></textarea>
+                            <p class="postDate">毎月 <span class="postDay">X</span>日 <span class="postTime">21:00</span>
+                            </p>
+                            <p class="postTextL">41</p>
+                        </div>
+                        <div class="dataBox">
+                            <button id="InTemplate" class="button--normal">Template</button>
+                            <button id="InHashtag" class="button--normal">Hashtag</button>
+                            <button id="InSchedule" class="button--normal">Schedule</button>
+                            <button id="InImg" class="button--normal">Images (<span class="postImgL">0</span>)</button>
+                        </div>
+                        <button id="preview" class="button--comit">Preview</button>
+                    </div>
+                </section>
+        </main>
+        <main class="previewPage">
+            <section>
+                <h2>Twitterの投稿プレビュー</h2>
+                <div class="twPreview">
+                    <p class="twIcon"><img alt="" draggable="true" src="https://pbs.twimg.com/profile_images/1410572857843744769/83kk4DFK_200x200.jpg" class="css-9pa8cd"></p>
+                    <div class="twCont">
+                        <div class="twPreview__user">
+                            <p class="twPreview__userName">Ceria fi Ixtigna</p>
+                            <p class="twPreview__userId">@userId</p>
+                        </div>
+                        <div class="twPreview__text">この文章はダミーです。文字の大きさ、量、字間、行間等を確認するために入れています。
+<span>https://cir.booth.pm/</span></div>
+                        <div class="twPreview__img">
+                            <img src="https://pbs.twimg.com/media/E5BGHBoVgAcrm5q?format=jpg&name=large" alt="">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h2>Instagramの投稿プレビュー</h2>
+                <div class="inPreview">
+                    <div class="inCont">
+                        <div class="inPreview__user">
+                            <p class="inIcon"><img alt="" draggable="true" src="https://pbs.twimg.com/profile_images/1410572857843744769/83kk4DFK_200x200.jpg" class="css-9pa8cd"></p>
+                            <p class="inPreview__userName">Ceria fi Ixtigna</p>
+                        </div>
+                        <div class="inPreview__img">
+                            <img src="https://pbs.twimg.com/media/E5BGHBoVgAcrm5q?format=jpg&name=large" alt="">
+                            <img src="img/in_icon.png" alt="" class="inPreview__imgIcon">
+                        </div>
+                        <div class="inPreview__text">この文章はダミーです。文字の大きさ、量、字間、行間等を確認するために入れています。
+<span>https://cir.booth.pm/</span></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <div class="editBox">
+            <button id="Revise" class="button--comit">Revise</button>
+        </div>
+        </form>
+        <footer id="n_SNS_Post_Maker">
+            <small>© SNS Post Maker</small>
+        </footer>
+    </div>
+    <div class="disp--none alert postCompBox">
+        <p class="alertTitle">Post Complete!</p>
+        <button id="InImg" class="button--alert">Post list</button>
+        <button id="InImg" class="button--alert">New post</button>
+    </div>
+    <div class="disp--none modal postTemp">
+        <div class="modalWrap">
+            <section>
+                <h3 class="modalTitle">Templete</h3>
+                <article class="postTemp__cont">
+                    <h4>タイトル01</h4>
+                    <p>この文章はダミーです。文字の大きさ、量、字間、行間等を確認するために入れています。</p>
+                </article>
+                <article class="postTemp__cont">
+                    <h4>タイトル02</h4>
+                    <p>この文章はダミーです。文字の大きさ、量、字間、行間等を確認するために入れています。</p>
+                </article>
+                <article class="postTemp__cont">
+                    <h4>タイトル03</h4>
+                    <p>この文章はダミーです。文字の大きさ、量、字間、行間等を確認するために入れています。</p>
+                </article>
+            </section>
+        </div>
+    </div>
+    <div class="disp--none modal postHash">
+        <div class="modalWrap">
+            <section>
+                <h3 class="modalTitle">Hashtag</h3>
+                <article class="postHash__cont">
+                    <h4>ハンドメイド：イベント用</h4>
+                    <p>#デザフェス54 #コミティア137 #デザフェス #デザインフェスタ #コミティア #M3 #yhm #スチームパンク #スチームパンクファッション #ファンタジー雑貨 #ハンドメイドアクセサリー #ファンタジーアクセサリー #スチームパンクアクセサリー #異世界 #精霊使い #魔術師 #魔法使い #オリジナルアクセサリー</p>
+                </article>
+                <article class="postHash__cont">
+                    <h4>音楽活動：イベント用</h4>
+                    <p>#2021秋M3 #秋M3 #M3オンライン #デザフェス54 #コミティア137 #m3 #デザフェス #デザインフェスタ #コミティア #apollo #dtm #dtmer #dtm女子 #シンガーソングライター #ボーカル #ヴォーカル #作曲</p>
+                </article>
+                <article class="postHash__cont">
+                    <h4>Web制作</h4>
+                    <p>#web制作者の日常 #フリーランスの日常 #パラレルワーク #Webデザイナー #Webエンジニア #Webクリエイター #Webデザイン #デザイナー #フリーランス #フリーランスデザイナー #フリーランスエンジニア #design</p>
+                </article>
+            </section>
+        </div>
+    </div>
+    <div class="disp--none modal postSche">
+        <div class="modalWrap">
+            <section>
+                <h3 class="modalTitle">Schedule</h3>
+                <p class="scheFix">毎月<span class="scheDay">9</span>日<span class="scheTimeH">21</span><span class="scheTimeS">:</span><span class="scheTimeM">00</span></p>
+                <select name="scheDay" class="scheDay__select">
+                    <option>- 日付を選択 -</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                    <option value="21">21</option>
+                    <option value="22">22</option>
+                    <option value="23">23</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                    <option value="29">29</option>
+                    <option value="30">30</option>
+                    <option value="31">31</option>
+                  </select> 日　
+                  <input type="time" name="time" id="time" value="06:44">
+            </section>
+        </div>
+    </div>
+</body>
+
+</html>
