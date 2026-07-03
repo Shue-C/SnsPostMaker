@@ -57,8 +57,8 @@ Claude Code（Web・アプリ・CLIいずれでも）でこのリポジトリを
 → 数値を報告（/report で振り返り） → 次月の企画へ
 ```
 
-投稿の実行は手動（コピペ）です。各SNSのAPI利用（自動投稿）は
-Blueskyのみ無料で対応可能なので、必要になったら相談してください。
+**Bluesky と X は `/publish` で自動投稿できます**（初回のみ `scripts/README.md` の
+手順で認証情報の設定が必要）。Instagram / Threads は手動コピペ運用です。
 
 ## ディレクトリ構成
 
@@ -72,4 +72,5 @@ data/hashtags.md     ハッシュタグバンク
 data/templates/      投稿テンプレート5種
 data/calendar/       投稿カレンダー（月別・ステータス管理）
 data/analytics/      実績記録・レポート
+scripts/             Bluesky/X 自動投稿スクリプト（要セットアップ）
 ```
