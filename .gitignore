@@ -1,0 +1,7 @@
+# 認証情報（絶対にコミットしない）
+scripts/.env
+.env
+
+# Python
+__pycache__/
+*.pyc
