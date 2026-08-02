@@ -12,6 +12,9 @@
   --gold:     #b99a55;
   --paper:    #f6f2ec;
   --danger:   #9d3b33;
+  /* 「おみくじの種類」を外したぶん、フッター一式をこの分だけ上に寄せる。
+     値を変えるだけでページの詰め具合を調整できる（0 なら原画どおり）。 */
+  --footer-shift: 372px;
   /* Sawarabi Mincho は同梱（css/fonts.css）。以降は端末側の明朝へフォールバック */
   --mincho: "Sawarabi Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro",
             "Yu Mincho", "YuMincho", "MS PMincho", serif;
@@ -47,7 +50,7 @@ html, body {
 .canvas {
   position: relative;
   width: 1024px;
-  height: 1536px;
+  height: calc(1536px - var(--footer-shift));
   flex: 0 0 auto;
   background: url('../assets/paper.png') repeat;
   transform: scale(var(--s, 1));
@@ -74,6 +77,15 @@ html, body {
 }
 .edge-left { left: 12px; }
 .edge-right { left: 984px; transform: scaleX(-1); }
+
+/* フッター一式。子要素は css/assets.css の座標のまま、群ごと上へ動かす。 */
+.footer-group {
+  position: absolute;
+  inset: 0;
+  transform: translateY(calc(-1 * var(--footer-shift)));
+  /* キャンバス全面を覆う入れ物なので、下のタップ領域を塞がないようにする */
+  pointer-events: none;
+}
 
 /* 左右反転して対になる飾りの位置は css/assets.css の .mirror-x が持つ */
 
@@ -158,19 +170,6 @@ html, body {
   text-align: center;
   color: var(--ink-soft);
   transition: opacity .4s ease;
-}
-
-.section-title {
-  position: absolute;
-  top: 1002px;
-  left: 0;
-  width: 100%;
-  margin: 0;
-  font-size: 22px;
-  letter-spacing: .1em;
-  text-indent: .1em;
-  text-align: center;
-  color: var(--ink);
 }
 
 .footer-phrase {

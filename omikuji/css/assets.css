@@ -20,26 +20,6 @@
   left: 12px; top: 300px; width: 28px; height: 1px;
   background-image: url('../assets/border-v.png');
 }
-.a-card-1 {
-  left: 111px; top: 1035px; width: 157px; height: 264px;
-  background-image: url('../assets/card-1.png');
-}
-.a-card-2 {
-  left: 281px; top: 1035px; width: 145px; height: 264px;
-  background-image: url('../assets/card-2.png');
-}
-.a-card-3 {
-  left: 440px; top: 1035px; width: 144px; height: 264px;
-  background-image: url('../assets/card-3.png');
-}
-.a-card-4 {
-  left: 598px; top: 1035px; width: 144px; height: 264px;
-  background-image: url('../assets/card-4.png');
-}
-.a-card-5 {
-  left: 756px; top: 1035px; width: 145px; height: 264px;
-  background-image: url('../assets/card-5.png');
-}
 .a-cloud {
   left: 130px; top: 380px; width: 90px; height: 65px;
   background-image: url('../assets/cloud.png');
@@ -86,14 +66,6 @@
 }
 .a-rule-small.mirror-x {
   left: 743px;
-  transform: scaleX(-1);
-}
-.a-section-rule {
-  left: 330px; top: 1010px; width: 73px; height: 18px;
-  background-image: url('../assets/section-rule.png');
-}
-.a-section-rule.mirror-x {
-  left: 621px;
   transform: scaleX(-1);
 }
 .a-sigil-core {

@@ -54,7 +54,7 @@ BAND_BOX = (33, 500, 991, 1004)
 BAND_FADE = 26
 
 # 左右反転して対になる飾り
-MIRRORED = ('rule-small', 'cloud', 'section-rule', 'star')
+MIRRORED = ('rule-small', 'cloud', 'star')
 
 # 切り出した各パーツの設計座標上の位置 name -> (x, y, w, h)
 PLACED = {}
@@ -255,25 +255,9 @@ PARTS = {
     'cloud':         dict(box=(130, 380, 252, 445), alpha=True, tight=True,
                           low=9, high=44),
 
-    # セクション見出しの飾り（見出し文字を巻き込まないよう罫線の範囲だけ切る）
-    'section-rule':  dict(box=(325, 1002, 420, 1030), alpha=True, tight=True, low=6),
-
     # フッターの円形紋章
     'emblem-bottom': dict(box=(438, 1412, 592, 1534), alpha=True, tight=True),
 }
-
-# おみくじ5種のカード（静的な図版なので文字ごと1枚絵として使う）。
-# 原画のカードは幅も間隔も揃っていないので、1枚ずつ実測した位置で切る。
-CARD_BOXES = [
-    (111, 1035, 268, 1299),
-    (281, 1035, 426, 1299),
-    (440, 1035, 584, 1299),
-    (598, 1035, 742, 1299),
-    (756, 1035, 901, 1299),
-]
-for _i, _b in enumerate(CARD_BOXES):
-    PARTS['card-%d' % (_i + 1)] = dict(box=_b)
-
 
 # ---------------------------------------------------------------- 生成
 
