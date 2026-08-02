@@ -4,71 +4,77 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="魔導おみくじ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="西洋魔法おみくじ">
 <meta name="format-detection" content="telephone=no">
-<title>魔導おみくじ｜Ceria fi Ixtigna</title>
+<title>西洋魔法おみくじ｜Ceria fi Ixtigna</title>
+<link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="state-idle">
 
-<div class="aether" aria-hidden="true"></div>
+<div class="viewport">
+  <div class="canvas" id="canvas">
 
-<header class="masthead">
-  <p class="brand">Ceria fi Ixtigna</p>
-  <h1 class="title">魔導おみくじ</h1>
-</header>
+    <!-- 外周の飾り枠 -->
+    <i class="edge edge-top"></i>
+    <i class="edge edge-bottom"></i>
+    <i class="edge edge-left"></i>
+    <i class="edge edge-right"></i>
+    <i class="deco a-corner-tl"></i>
+    <i class="deco a-corner-tr"></i>
+    <i class="deco a-corner-bl"></i>
+    <i class="deco a-corner-br"></i>
 
-<main class="stage">
+    <!-- ヘッダー -->
+    <p class="eyebrow eyebrow--l">ARCANE FORTUNE</p>
+    <p class="eyebrow eyebrow--r">ORACLE OF FATE</p>
+    <i class="deco a-rule-small rule--l"></i>
+    <i class="deco a-rule-small rule--r"></i>
+    <i class="deco a-emblem-top"></i>
 
-  <!-- 待機画面 -->
-  <section id="view-idle" class="view is-active">
-    <button id="draw-btn" class="draw-btn" type="button">
-      <span class="draw-btn__ring" aria-hidden="true"></span>
-      <span class="draw-btn__glyph" aria-hidden="true">✦</span>
-      <span class="draw-btn__label">おみくじを引く</span>
-    </button>
-    <p class="hint">刻印盤に触れてください</p>
-  </section>
+    <i class="deco a-star star--l"></i>
+    <i class="deco a-star star--r"></i>
+    <h1 class="title">西洋魔法おみくじ</h1>
+    <p class="subtitle">— Omikuji of Western Magic —</p>
+    <i class="deco a-divider"></i>
 
-  <!-- 抽選演出 -->
-  <section id="view-drawing" class="view">
-    <div class="sigil" aria-hidden="true">
-      <svg viewBox="0 0 200 200" class="sigil__svg">
-        <circle class="ring ring--slow" cx="100" cy="100" r="92"/>
-        <circle class="ring ring--fast" cx="100" cy="100" r="74"/>
-        <circle class="ring ring--slow-rev" cx="100" cy="100" r="56"/>
-        <polygon class="star star--a" points="100,26 164,137 36,137"/>
-        <polygon class="star star--b" points="100,174 36,63 164,63"/>
-        <circle class="core" cx="100" cy="100" r="14"/>
-      </svg>
-      <div class="sigil__spark"></div>
-    </div>
-    <p id="drawing-text" class="drawing-text">精霊に伺いを立てています</p>
-  </section>
+    <!-- 案内文（状態によって差し替わる） -->
+    <i class="deco a-cloud cloud--l"></i>
+    <i class="deco a-cloud cloud--r"></i>
+    <h2 class="lead-title" id="lead-title">魔法のおみくじを引いてみましょう</h2>
+    <p class="lead-sub" id="lead-sub">あなたの運命を導く、魔法の言葉。<br>心を静めて、下のクリスタルをタップしてください。</p>
 
-  <!-- 結果 -->
-  <section id="view-result" class="view">
-    <p class="result__lead">刻印が下りました</p>
-    <p id="result-label" class="result__label"></p>
-    <p class="result__note">プリンターから出てくる<br>おみくじをお受け取りください</p>
-    <div id="preview" class="preview" hidden></div>
-  </section>
+    <!-- 中央：城の背景と魔法陣 -->
+    <i class="deco a-bg-castles"></i>
+    <i class="deco a-sigil-ring" id="ring"></i>
+    <i class="deco a-sigil-ring ring-echo" id="ring-echo"></i>
+    <i class="deco a-sigil-core" id="core"></i>
+    <i class="deco a-ribbon" id="ribbon"></i>
+    <button class="draw-hit" id="draw-btn" type="button" aria-label="おみくじを引く"></button>
 
-  <!-- エラー -->
-  <section id="view-error" class="view">
-    <p class="error__title">おみくじを刷れませんでした</p>
-    <p id="error-detail" class="error__detail"></p>
-    <button id="error-back" class="ghost-btn" type="button">戻る</button>
-  </section>
+    <!-- おみくじの種類 -->
+    <i class="deco a-section-rule srule--l"></i>
+    <i class="deco a-section-rule srule--r"></i>
+    <p class="section-title">おみくじの種類</p>
+    <i class="deco a-card-1"></i>
+    <i class="deco a-card-2"></i>
+    <i class="deco a-card-3"></i>
+    <i class="deco a-card-4"></i>
+    <i class="deco a-card-5"></i>
 
-</main>
+    <!-- フッター -->
+    <i class="deco a-star fstar--l"></i>
+    <i class="deco a-star fstar--r"></i>
+    <p class="footer-phrase">魔法はいつも、あなたのそばに。</p>
+    <p class="footer-left">© 2026 Ceria fi Ixtigna</p>
+    <p class="footer-right">Designed with ✦ for magic lovers.</p>
+    <i class="deco a-emblem-bottom"></i>
 
-<footer class="footerbar">
-  <span id="status-line" class="status-line"></span>
-</footer>
+  </div>
+</div>
 
-<!-- 設定パネルを開く隠しボタン（1.5秒長押し） -->
+<!-- 設定パネルを開く隠しボタン（右上を1.5秒長押し） -->
 <button id="settings-toggle" class="settings-toggle" type="button" aria-label="設定を開く"></button>
 
 <div id="settings" class="settings" hidden>
@@ -106,6 +112,15 @@
     </label>
 
     <p id="settings-info" class="settings__info"></p>
+
+    <details class="history">
+      <summary>おみくじの履歴</summary>
+      <p id="history-summary" class="history__summary"></p>
+      <ol id="history-list" class="history__list"></ol>
+      <button id="set-clear-history" class="ghost-btn" type="button">履歴を消去</button>
+    </details>
+
+    <div id="preview" class="preview" hidden></div>
 
     <div class="settings__actions">
       <button id="set-test" class="ghost-btn" type="button">テスト印刷</button>

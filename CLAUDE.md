@@ -96,4 +96,5 @@ data/templates/     投稿テンプレート（新作紹介・BOOTH販促・イ�
 data/calendar/      投稿カレンダー（月別、ステータス管理）
 data/analytics/     投稿実績の記録と月次レポート
 scripts/            自動投稿スクリプト（Bluesky / X。scripts/README.md 参照）
+omikuji/            イベント用おみくじアプリ（iPad + EPSON TM-m30。omikuji/README.md 参照）
 ```

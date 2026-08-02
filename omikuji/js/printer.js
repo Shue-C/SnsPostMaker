@@ -65,8 +65,8 @@
 
     if (!global.epson || !global.epson.ePOSDevice) {
       return Promise.reject(new Error(
-        'epos-2.js が読み込まれていません。Epson ePOS SDK for JavaScript を' +
-        ' omikuji/js/epos-2.js に配置してください（README参照）。'
+        'epos-2.js が読み込まれていません。' +
+        'README の手順で js/epos-2.js を配置してください。'
       ));
     }
 

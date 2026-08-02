@@ -1,17 +1,40 @@
 /**
  * 画面制御とフロー全体。
  *
- *   待機 →（ボタン）→ 演出（約3秒）→ 印刷 → 結果 → 待機
+ *   待機 →（クリスタルをタップ）→ 演出（約3秒）→ 印刷 → 結果 → 待機
  *
- * 演出を流している裏で「抽選」「画像のラスター化」「プリンター接続」を
- * 並行して進めるので、演出が終わった瞬間に印刷が始まる。
+ * 画面は原画と同じ 1024x1536 の座標系で組んであり、ここで画面サイズに
+ * 合わせた倍率（--s）を計算する。演出中の裏で「抽選」「画像のラスター化」
+ * 「プリンター接続」を並行して進めるので、演出が終わった瞬間に印刷が始まる。
  */
 (function (global) {
   'use strict';
 
   var SETTINGS_KEY = 'omikuji.settings.v1';
+  var HISTORY_KEY = 'omikuji.history.v1';
+  var HISTORY_MAX = 500;
 
-  var DRAWING_MESSAGES = [
+  var DESIGN_W = 1024;
+  var DESIGN_H = 1536;
+
+  var TEXT = {
+    idle: {
+      title: '魔法のおみくじを引いてみましょう',
+      sub: 'あなたの運命を導く、魔法の言葉。<br>心を静めて、下のクリスタルをタップしてください。'
+    },
+    drawing: {
+      title: '精霊に伺いを立てています',
+      sub: 'クリスタルが今日のことばを選んでいます。'
+    },
+    result: {
+      sub: 'プリンターから出てくる<br>おみくじをお受け取りください。'
+    },
+    error: {
+      title: 'おみくじを刷れませんでした'
+    }
+  };
+
+  var DRAWING_TITLES = [
     '精霊に伺いを立てています',
     '刻印盤が回っています',
     '今日のことばを選んでいます'
@@ -22,21 +45,39 @@
   var canvasCache = {};
   var missingImages = [];
   var busy = false;
+  var errorAt = 0;
   var timers = [];
+
+  // ------------------------------------------------------------ 画面サイズ
+
+  function fitCanvas() {
+    var s = Math.min(global.innerWidth / DESIGN_W, global.innerHeight / DESIGN_H);
+    el.canvas.style.setProperty('--s', s);
+  }
 
   // ------------------------------------------------------------ 設定
 
-  function loadOverrides() {
+  function loadJson(key, fallback) {
     try {
-      return JSON.parse(global.localStorage.getItem(SETTINGS_KEY)) || {};
+      var v = JSON.parse(global.localStorage.getItem(key));
+      return v === null || v === undefined ? fallback : v;
     } catch (e) {
-      return {};
+      return fallback;
+    }
+  }
+
+  function saveJson(key, value) {
+    try {
+      global.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
   function buildConfig() {
     var base = JSON.parse(JSON.stringify(global.OMIKUJI_CONFIG));
-    var ov = loadOverrides();
+    var ov = loadJson(SETTINGS_KEY, {});
     if (ov.backend) base.backend = ov.backend;
     if (ov.host) base.printer.host = ov.host;
     if (ov.sdkPort) base.printer.sdkPort = Number(ov.sdkPort);
@@ -45,12 +86,12 @@
     return base;
   }
 
-  // ------------------------------------------------------------ 画面
+  // ------------------------------------------------------------ 状態
 
-  function setView(name) {
-    ['idle', 'drawing', 'result', 'error'].forEach(function (v) {
-      el['view_' + v].classList.toggle('is-active', v === name);
-    });
+  function setState(name, title, sub) {
+    document.body.className = 'state-' + name;
+    if (title !== undefined) el.leadTitle.textContent = title;
+    if (sub !== undefined) el.leadSub.innerHTML = sub;
   }
 
   function clearTimers() {
@@ -64,12 +105,11 @@
     return t;
   }
 
-  function updateStatus() {
-    var parts = [backend.describe()];
-    var rest = drawer.remaining();
-    if (rest !== null) parts.push('袋の残り ' + rest + ' 枚');
-    if (missingImages.length) parts.push('画像未設定 ' + missingImages.length + ' 件');
-    el.statusLine.textContent = parts.join('　/　');
+  function goIdle() {
+    clearTimers();
+    busy = false;
+    el.drawBtn.disabled = false;
+    setState('idle', TEXT.idle.title, TEXT.idle.sub);
   }
 
   // ------------------------------------------------------------ 印刷素材
@@ -93,7 +133,44 @@
         return getCanvas(item).catch(function () { /* 個別失敗は無視 */ });
       });
     });
-    return chain.then(updateStatus);
+    return chain;
+  }
+
+  // ------------------------------------------------------------ 履歴
+
+  function recordHistory(item) {
+    var list = loadJson(HISTORY_KEY, []);
+    list.unshift({ t: Date.now(), id: item.id, label: item.label });
+    if (list.length > HISTORY_MAX) list.length = HISTORY_MAX;
+    saveJson(HISTORY_KEY, list);
+  }
+
+  function renderHistory() {
+    var list = loadJson(HISTORY_KEY, []);
+    var today = new Date().toDateString();
+    var todayCount = 0;
+    var byId = {};
+    list.forEach(function (r) {
+      if (new Date(r.t).toDateString() === today) todayCount++;
+      byId[r.label] = (byId[r.label] || 0) + 1;
+    });
+    var breakdown = Object.keys(byId).sort().map(function (k) {
+      return k + ' ' + byId[k];
+    }).join(' / ');
+    el.historySummary.textContent = list.length
+      ? '本日 ' + todayCount + ' 枚 ／ 累計 ' + list.length + ' 枚\n' + breakdown
+      : 'まだ記録がありません。';
+
+    el.historyList.innerHTML = '';
+    list.slice(0, 60).forEach(function (r) {
+      var li = document.createElement('li');
+      var d = new Date(r.t);
+      var hh = ('0' + d.getHours()).slice(-2);
+      var mm = ('0' + d.getMinutes()).slice(-2);
+      li.textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hh + ':' + mm +
+                       '　' + r.label;
+      el.historyList.appendChild(li);
+    });
   }
 
   // ------------------------------------------------------------ フロー
@@ -102,13 +179,13 @@
     return new Promise(function (resolve) { setTimeout(resolve, ms); });
   }
 
-  function cycleDrawingText() {
+  function cycleTitles() {
     var i = 0;
-    el.drawingText.textContent = DRAWING_MESSAGES[0];
-    var step = Math.max(900, Math.floor(cfg.ui.animationMs / DRAWING_MESSAGES.length));
+    el.leadTitle.textContent = DRAWING_TITLES[0];
+    var step = Math.max(900, Math.floor(cfg.ui.animationMs / DRAWING_TITLES.length));
     var id = setInterval(function () {
-      i = (i + 1) % DRAWING_MESSAGES.length;
-      el.drawingText.textContent = DRAWING_MESSAGES[i];
+      i = (i + 1) % DRAWING_TITLES.length;
+      el.leadTitle.textContent = DRAWING_TITLES[i];
     }, step);
     return function stop() { clearInterval(id); };
   }
@@ -122,27 +199,24 @@
     el.preview.innerHTML = '';
 
     var item = drawer.draw();
-    setView('drawing');
-    var stopText = cycleDrawingText();
+    setState('drawing', TEXT.drawing.title, TEXT.drawing.sub);
+    var stopTitles = cycleTitles();
 
-    // 演出中に素材の準備と接続を済ませる
-    var ready = Promise.all([
-      getCanvas(item),
-      backend.ensureReady().catch(function (e) { return Promise.reject(e); })
-    ]);
+    // 演出を流している裏で素材の準備と接続を済ませる
+    var ready = Promise.all([getCanvas(item), backend.ensureReady()]);
 
     Promise.all([ready, sleep(cfg.ui.animationMs)])
       .then(function (results) {
-        var canvas = results[0][0];
-        return backend.printCanvas(canvas, cfg.print);
+        return backend.printCanvas(results[0][0], cfg.print);
       })
       .then(function () {
-        stopText();
-        el.resultLabel.textContent = item.label;
-        setView('result');
-        updateStatus();
+        stopTitles();
+        recordHistory(item);
+        setState('result', item.label, TEXT.result.sub);
         later(function () {
-          setView('idle');
+          goIdle();
+          busy = true;                       // 連打防止のクールダウン
+          el.drawBtn.disabled = true;
           later(function () {
             busy = false;
             el.drawBtn.disabled = false;
@@ -150,59 +224,60 @@
         }, cfg.ui.resultMs);
       })
       .catch(function (err) {
-        stopText();
+        stopTitles();
         console.error(err);
-        el.errorDetail.textContent = (err && err.message) ? err.message : String(err);
-        setView('error');
+        var msg = (err && err.message) ? err.message : String(err);
+        setState('error', TEXT.error.title,
+                 escapeHtml(msg) + '<br>画面のどこかに触れると最初に戻ります。');
+        errorAt = Date.now();
         busy = false;
         el.drawBtn.disabled = false;
-        later(backToIdle, 20000);
+        later(goIdle, 20000);
       });
   }
 
-  function backToIdle() {
-    clearTimers();
-    busy = false;
-    el.drawBtn.disabled = false;
-    setView('idle');
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   // ------------------------------------------------------------ 設定UI
 
   function openSettings() {
-    var ov = loadOverrides();
+    var ov = loadJson(SETTINGS_KEY, {});
     el.setBackend.value = cfg.backend;
     el.setHost.value = cfg.printer.host;
     el.setSdkPort.value = cfg.printer.sdkPort;
     el.setXmlPort.value = cfg.printer.xmlPort;
     el.setInvert.checked = !!cfg.print.invertBits;
 
-    var info = [];
+    var info = ['接続: ' + backend.describe()];
+    var rest = drawer.remaining();
+    if (rest !== null) info.push('袋の残り: ' + rest + ' 枚');
     info.push('用紙幅: ' + cfg.paper.widthDots + 'ドット');
-    info.push('抽選方式: ' + (cfg.draw.mode === 'bag' ? '袋引き（1周まで重複なし）' : '重み付き抽選'));
     if (missingImages.length) {
       info.push('画像が見つからない項目: ' + missingImages.join(', ') +
-                '\n（プレースホルダーを印刷します）');
+                '（プレースホルダーを印刷します）');
     } else {
-      info.push('画像: 全' + cfg.items.length + '種を読み込み済み');
+      info.push('おみくじ画像: 全' + cfg.items.length + '種を読み込み済み');
     }
-    if (ov && Object.keys(ov).length) info.push('※この端末の保存設定が config.js より優先されています');
+    if (Object.keys(ov).length) {
+      info.push('※この端末の保存設定が config.js より優先されています');
+    }
     el.settingsInfo.textContent = info.join('\n');
 
+    renderHistory();
     el.settings.hidden = false;
   }
 
   function saveSettings() {
-    var ov = {
+    var ok = saveJson(SETTINGS_KEY, {
       backend: el.setBackend.value,
       host: el.setHost.value.trim(),
       sdkPort: Number(el.setSdkPort.value) || undefined,
       xmlPort: Number(el.setXmlPort.value) || undefined,
       invertBits: el.setInvert.checked
-    };
-    try {
-      global.localStorage.setItem(SETTINGS_KEY, JSON.stringify(ov));
-    } catch (e) {
+    });
+    if (!ok) {
       alert('設定を保存できませんでした（プライベートブラウズ中かもしれません）');
       return;
     }
@@ -211,8 +286,7 @@
 
   function testPrint() {
     var canvas = global.Raster.makePlaceholder(
-      { id: 'TEST', label: 'テスト印刷' }, cfg.paper.widthDots
-    );
+      { id: 'TEST', label: 'テスト印刷' }, cfg.paper.widthDots);
     el.settingsInfo.textContent = '印刷中…';
     backend.ensureReady()
       .then(function () { return backend.printCanvas(canvas, cfg.print); })
@@ -222,11 +296,8 @@
 
   function bindLongPress(node, ms, handler) {
     var timer = null;
-    function start() {
-      clearTimeout(timer);
-      timer = setTimeout(handler, ms);
-    }
-    function cancel() { clearTimeout(timer); }
+    var start = function () { clearTimeout(timer); timer = setTimeout(handler, ms); };
+    var cancel = function () { clearTimeout(timer); };
     node.addEventListener('touchstart', start, { passive: true });
     node.addEventListener('touchend', cancel);
     node.addEventListener('touchcancel', cancel);
@@ -242,6 +313,7 @@
     var request = function () {
       global.navigator.wakeLock.request('screen').then(function (l) {
         lock = l;
+        l.addEventListener('release', function () { lock = null; });
       }).catch(function () { /* 非対応・拒否時は何もしない */ });
     };
     request();
@@ -254,19 +326,16 @@
 
   function init() {
     var ids = {
-      view_idle: 'view-idle', view_drawing: 'view-drawing',
-      view_result: 'view-result', view_error: 'view-error',
-      drawBtn: 'draw-btn', drawingText: 'drawing-text', resultLabel: 'result-label',
-      preview: 'preview', errorDetail: 'error-detail', errorBack: 'error-back',
-      statusLine: 'status-line', settings: 'settings', settingsToggle: 'settings-toggle',
-      settingsInfo: 'settings-info', setBackend: 'set-backend', setHost: 'set-host',
-      setSdkPort: 'set-sdk-port', setXmlPort: 'set-xml-port', setInvert: 'set-invert',
-      setTest: 'set-test', setResetBag: 'set-reset-bag', setSave: 'set-save',
-      setClose: 'set-close'
+      canvas: 'canvas', drawBtn: 'draw-btn', ribbon: 'ribbon',
+      leadTitle: 'lead-title', leadSub: 'lead-sub',
+      preview: 'preview', settings: 'settings', settingsToggle: 'settings-toggle',
+      settingsInfo: 'settings-info', historySummary: 'history-summary',
+      historyList: 'history-list', setClearHistory: 'set-clear-history',
+      setBackend: 'set-backend', setHost: 'set-host', setSdkPort: 'set-sdk-port',
+      setXmlPort: 'set-xml-port', setInvert: 'set-invert', setTest: 'set-test',
+      setResetBag: 'set-reset-bag', setSave: 'set-save', setClose: 'set-close'
     };
-    Object.keys(ids).forEach(function (key) {
-      el[key] = document.getElementById(ids[key]);
-    });
+    Object.keys(ids).forEach(function (k) { el[k] = document.getElementById(ids[k]); });
 
     cfg = buildConfig();
     drawer = new global.Drawer(cfg.items, cfg.draw.mode);
@@ -282,20 +351,42 @@
       }
     });
 
+    fitCanvas();
+    global.addEventListener('resize', fitCanvas);
+    global.addEventListener('orientationchange', fitCanvas);
+
     el.drawBtn.addEventListener('click', onDraw);
-    el.errorBack.addEventListener('click', backToIdle);
+    el.drawBtn.addEventListener('touchstart', function () {
+      el.ribbon.style.opacity = '.8';
+    }, { passive: true });
+    ['touchend', 'touchcancel', 'mouseup'].forEach(function (ev) {
+      el.drawBtn.addEventListener(ev, function () { el.ribbon.style.opacity = ''; });
+    });
+
+    // エラー表示中はどこを触っても最初に戻れるようにする。
+    // ただしエラーの原因になったタップ自身を拾わないよう、少し待ってから有効にする。
+    document.addEventListener('click', function (e) {
+      if (document.body.classList.contains('state-error') &&
+          Date.now() - errorAt > 600 &&
+          !el.settings.contains(e.target) && e.target !== el.settingsToggle) {
+        goIdle();
+      }
+    });
+
     bindLongPress(el.settingsToggle, 1500, openSettings);
     el.setClose.addEventListener('click', function () { el.settings.hidden = true; });
     el.setSave.addEventListener('click', saveSettings);
     el.setTest.addEventListener('click', testPrint);
     el.setResetBag.addEventListener('click', function () {
       drawer.reset();
-      updateStatus();
       el.settingsInfo.textContent = '抽選をリセットしました。';
     });
+    el.setClearHistory.addEventListener('click', function () {
+      saveJson(HISTORY_KEY, []);
+      renderHistory();
+    });
 
-    setView('idle');
-    updateStatus();
+    goIdle();
     preloadAll();
     keepAwake();
   }
