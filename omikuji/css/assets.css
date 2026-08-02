@@ -1,0 +1,114 @@
+/* slice_assets.py が自動生成。直接編集しないこと。 */
+/* 原画 1024x1536 の座標系にパーツを配置する。 */
+
+.deco {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
+.a-bg-castles {
+  left: 33px; top: 500px; width: 958px; height: 504px;
+  background-image: url('../assets/bg-castles.png');
+}
+.a-border-h {
+  left: 200px; top: 12px; width: 1px; height: 28px;
+  background-image: url('../assets/border-h.png');
+}
+.a-border-v {
+  left: 12px; top: 300px; width: 28px; height: 1px;
+  background-image: url('../assets/border-v.png');
+}
+.a-card-1 {
+  left: 112px; top: 1035px; width: 154px; height: 264px;
+  background-image: url('../assets/card-1.png');
+}
+.a-card-2 {
+  left: 272px; top: 1035px; width: 154px; height: 264px;
+  background-image: url('../assets/card-2.png');
+}
+.a-card-3 {
+  left: 432px; top: 1035px; width: 154px; height: 264px;
+  background-image: url('../assets/card-3.png');
+}
+.a-card-4 {
+  left: 592px; top: 1035px; width: 154px; height: 264px;
+  background-image: url('../assets/card-4.png');
+}
+.a-card-5 {
+  left: 752px; top: 1035px; width: 154px; height: 264px;
+  background-image: url('../assets/card-5.png');
+}
+.a-cloud {
+  left: 140px; top: 378px; width: 103px; height: 62px;
+  background-image: url('../assets/cloud.png');
+}
+.a-cloud.mirror-x {
+  left: 781px;
+  transform: scaleX(-1);
+}
+.a-corner-bl {
+  left: 17px; top: 1394px; width: 99px; height: 118px;
+  background-image: url('../assets/corner-bl.png');
+}
+.a-corner-br {
+  left: 908px; top: 1394px; width: 99px; height: 118px;
+  background-image: url('../assets/corner-br.png');
+}
+.a-corner-tl {
+  left: 18px; top: 15px; width: 98px; height: 127px;
+  background-image: url('../assets/corner-tl.png');
+}
+.a-corner-tr {
+  left: 908px; top: 15px; width: 98px; height: 127px;
+  background-image: url('../assets/corner-tr.png');
+}
+.a-divider {
+  left: 200px; top: 318px; width: 624px; height: 60px;
+  background-image: url('../assets/divider.png');
+}
+.a-emblem-bottom {
+  left: 444px; top: 1420px; width: 140px; height: 116px;
+  background-image: url('../assets/emblem-bottom.png');
+}
+.a-emblem-top {
+  left: 376px; top: 30px; width: 272px; height: 178px;
+  background-image: url('../assets/emblem-top.png');
+}
+.a-ribbon {
+  left: 328px; top: 812px; width: 366px; height: 118px;
+  background-image: url('../assets/ribbon.png');
+}
+.a-rule-small {
+  left: 111px; top: 108px; width: 187px; height: 22px;
+  background-image: url('../assets/rule-small.png');
+}
+.a-rule-small.mirror-x {
+  left: 726px;
+  transform: scaleX(-1);
+}
+.a-section-rule {
+  left: 348px; top: 1010px; width: 55px; height: 11px;
+  background-image: url('../assets/section-rule.png');
+}
+.a-section-rule.mirror-x {
+  left: 621px;
+  transform: scaleX(-1);
+}
+.a-sigil-core {
+  left: 366px; top: 569px; width: 293px; height: 282px;
+  background-image: url('../assets/sigil-core.png');
+}
+.a-sigil-ring {
+  left: 289px; top: 492px; width: 446px; height: 446px;
+  background-image: url('../assets/sigil-ring.png');
+}
+.a-star {
+  left: 271px; top: 234px; width: 30px; height: 44px;
+  background-image: url('../assets/star.png');
+}
+.a-star.mirror-x {
+  left: 723px;
+  transform: scaleX(-1);
+}

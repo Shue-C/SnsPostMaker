@@ -73,4 +73,11 @@ data/templates/      投稿テンプレート5種
 data/calendar/       投稿カレンダー（月別・ステータス管理）
 data/analytics/      実績記録・レポート
 scripts/             Bluesky/X 自動投稿スクリプト（要セットアップ）
+omikuji/             イベント用おみくじアプリ（iPad + レシートプリンター）
 ```
+
+## おみくじアプリ（イベント用）
+
+`omikuji/` に、**iPadのボタンを押すとレシートプリンター（EPSON TM-m30）から
+おみくじが1枚出てくる**キオスクアプリが入っています。ブースの体験施策用です。
+セットアップは [`omikuji/README.md`](omikuji/README.md) を参照してください。
