@@ -44,6 +44,10 @@
   left: 140px; top: 378px; width: 103px; height: 62px;
   background-image: url('../assets/cloud.png');
 }
+.a-cloud.mirror-x {
+  left: 781px;
+  transform: scaleX(-1);
+}
 .a-corner-bl {
   left: 17px; top: 1394px; width: 99px; height: 118px;
   background-image: url('../assets/corner-bl.png');
@@ -80,9 +84,17 @@
   left: 111px; top: 108px; width: 187px; height: 22px;
   background-image: url('../assets/rule-small.png');
 }
+.a-rule-small.mirror-x {
+  left: 726px;
+  transform: scaleX(-1);
+}
 .a-section-rule {
-  left: 347px; top: 1003px; width: 98px; height: 26px;
+  left: 348px; top: 1010px; width: 55px; height: 11px;
   background-image: url('../assets/section-rule.png');
+}
+.a-section-rule.mirror-x {
+  left: 621px;
+  transform: scaleX(-1);
 }
 .a-sigil-core {
   left: 366px; top: 569px; width: 293px; height: 282px;
@@ -95,4 +107,8 @@
 .a-star {
   left: 271px; top: 234px; width: 30px; height: 44px;
   background-image: url('../assets/star.png');
+}
+.a-star.mirror-x {
+  left: 723px;
+  transform: scaleX(-1);
 }

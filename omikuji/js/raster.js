@@ -17,6 +17,8 @@
     });
   }
 
+  var MINCHO = '"Sawarabi Mincho", "Hiragino Mincho ProN", serif';
+
   /** 8の倍数に切り下げる（ラスターデータは1行=整数バイトである必要があるため）。 */
   function floorTo8(n) {
     return Math.max(8, Math.floor(n / 8) * 8);
@@ -62,11 +64,11 @@
 
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
-    ctx.font = '32px "Hiragino Mincho ProN", serif';
+    ctx.font = '32px ' + MINCHO;
     ctx.fillText('Ceria fi Ixtigna', w / 2, 130);
-    ctx.font = 'bold 120px "Hiragino Mincho ProN", serif';
+    ctx.font = '120px ' + MINCHO;
     ctx.fillText(item.id, w / 2, h / 2 + 20);
-    ctx.font = '40px "Hiragino Mincho ProN", serif';
+    ctx.font = '40px ' + MINCHO;
     ctx.fillText(item.label, w / 2, h / 2 + 110);
     ctx.font = '24px sans-serif';
     ctx.fillText('（画像未設定のプレースホルダー）', w / 2, h - 90);

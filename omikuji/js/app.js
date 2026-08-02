@@ -125,9 +125,15 @@
     });
   }
 
-  /** 起動時に全画像を読み込んでおき、初回の待ち時間をなくす。 */
+  /**
+   * 起動時に全画像を読み込んでおき、初回の待ち時間をなくす。
+   * プレースホルダーは canvas に文字を描くので、同梱フォントの
+   * 読み込みが済むのを待ってから作る（別の書体で焼き付くのを防ぐ）。
+   */
   function preloadAll() {
-    var chain = Promise.resolve();
+    var chain = document.fonts && document.fonts.ready
+      ? document.fonts.ready.catch(function () {})
+      : Promise.resolve();
     cfg.items.forEach(function (item) {
       chain = chain.then(function () {
         return getCanvas(item).catch(function () { /* 個別失敗は無視 */ });

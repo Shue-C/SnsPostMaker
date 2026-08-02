@@ -196,6 +196,9 @@ PLACED = {}
 
 DESIGN_W, DESIGN_H = 1024, 1536
 
+# 左右反転して対になる飾り。反転後の left も CSS に出しておく。
+MIRRORED = ('rule-small', 'cloud', 'section-rule', 'star')
+
 
 def write_css():
     """原画の座標をそのまま使える CSS を生成する。
@@ -221,6 +224,12 @@ def write_css():
         lines.append('  left: %dpx; top: %dpx; width: %dpx; height: %dpx;' % (x, y, w, h))
         lines.append("  background-image: url('../assets/%s.png');" % name)
         lines.append('}')
+        if name in MIRRORED:
+            # 対になる飾りは同じ画像を左右反転して使う
+            lines.append('.a-%s.mirror-x {' % name)
+            lines.append('  left: %dpx;' % (DESIGN_W - x - w))
+            lines.append('  transform: scaleX(-1);')
+            lines.append('}')
     path = os.path.join(ROOT, 'css', 'assets.css')
     with open(path, 'w') as f:
         f.write('\n'.join(lines) + '\n')
@@ -260,8 +269,8 @@ PARTS = {
     'cloud':         dict(box=(140, 378, 258, 440), alpha=True, tight=True,
                           low=6, high=40),
 
-    # セクション見出しの飾り
-    'section-rule':  dict(box=(340, 998, 445, 1032), alpha=True, tight=True, low=6),
+    # セクション見出しの飾り（見出し文字を巻き込まないよう罫線の行だけ切る）
+    'section-rule':  dict(box=(346, 1006, 408, 1024), alpha=True, tight=True, low=6),
 
     # フッターの円形紋章
     'emblem-bottom': dict(box=(444, 1420, 584, 1536), alpha=True, tight=True),

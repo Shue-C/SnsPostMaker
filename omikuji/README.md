@@ -172,6 +172,7 @@ items: [
 | 画像が荒い | [`images/README.md`](images/README.md) の作画のコツを参照。幅576pxで作り直すと改善します |
 | 同じおみくじばかり出る | `draw.mode: 'bag'` になっているか確認。設定パネルの「抽選をリセット」で袋を作り直せます |
 | 画面の飾りが出ない | `assets/` が空の可能性があります。`python3 tools/slice_assets.py` を実行してください |
+| 書体が違って見える | `fonts/*.woff2` が配信されているか確認。同梱フォントが読めないと端末の明朝にフォールバックします |
 
 ---
 
@@ -203,6 +204,22 @@ python3 omikuji/tools/slice_assets.py
 原画を差し替えた場合は、`tools/slice_assets.py` の先頭にある座標定数
 （`SIGIL_CX` / `RIBBON_BOX` / `PARTS` など）を新しい原画に合わせて調整してください。
 
+### 書体
+
+見出し・本文は **Sawarabi Mincho**（SIL Open Font License 1.1）です。
+**Google Fonts の CDN からは読まず、`fonts/` に同梱したものを使っています。**
+会場のLANはインターネットに繋がない構成なので、CDN参照だと当日フォントが
+落ちてこず、別の書体で表示されてしまうためです。
+
+- `css/fonts.css` … Google Fonts が配る `unicode-range` 付き118分割をそのまま
+  ローカル参照に書き換えたもの。実際に使う字が入ったファイルだけが読まれます
+  （この画面なら11ファイル・約130KB。同梱の合計は約1MB）
+- Sawarabi Mincho はウェイトが1種類（400）だけなので、見出しに `font-weight` は
+  指定していません。指定するとブラウザが合成太字を作り、明朝の線が濁ります
+- ラテン文字（ARCANE FORTUNE / Omikuji of Western Magic）は原画が欧文セリフなので、
+  `--latin`（Palatino系）のままにしてあります。和文と揃えたい場合は
+  `css/style.css` の `--latin` を `var(--mincho)` に変えてください
+
 ### デザインと変えたところ
 
 - フッターのクレジットを `© 2026 Ceria fi Ixtigna` に差し替え（タイトルは原画のまま）
@@ -226,6 +243,7 @@ omikuji/
 ├── js/draw.js        抽選（袋引き・重み付き）
 ├── js/app.js         画面遷移とフロー
 ├── design/           デザイン原画
+├── fonts/            同梱フォント（Sawarabi Mincho, OFL 1.1）
 ├── assets/           原画から切り出したパーツ（自動生成）
 ├── tools/            切り出しスクリプト
 └── images/           おみくじ画像 01.png〜12.png（印刷される中身）
