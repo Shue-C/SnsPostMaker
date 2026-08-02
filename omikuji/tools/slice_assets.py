@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""design/sample.png から画面用の装飾パーツを切り出す。
+"""design/ の原画から画面用の装飾パーツを切り出す。
 
 装飾はSVG等で描き起こさず、原画のピクセルをそのまま使う。
 クリーム地や空の上に描かれた線画は、局所的な地色からの色差をアルファに変換して
@@ -7,7 +7,17 @@
 
     python3 omikuji/tools/slice_assets.py
 
-出力先: omikuji/assets/
+入力:
+    design/sample.png … 画面全体のデザイン原画
+    design/maho.png   … 魔法陣（真円・白背景）。sample の魔法陣は楕円に歪んでいて
+                        回すと膨らみ縮みして見えるため、こちらを使う。
+出力:
+    assets/*.png      … パーツ画像（原画の解像度のまま＝高精細）
+    css/assets.css    … 設計座標での配置（自動生成）
+
+座標はすべて「設計座標」1024x1536 で書く。原画がこれより大きくても
+（現在は 2000x3000）自動で換算するので、この値は書き換えなくてよい。
+画面側も同じ 1024x1536 の座標系で組み、表示時に画面サイズへ合わせて拡大縮小する。
 """
 import math
 import os
@@ -17,21 +27,37 @@ from PIL import Image, ImageChops, ImageEnhance, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, 'design', 'sample.png')
 OUT = os.path.join(ROOT, 'assets')
+SRC = os.path.join(ROOT, 'design', 'sample.png')
+SRC_SIGIL = os.path.join(ROOT, 'design', 'maho.png')
 
-# 魔法陣の中心と半径（原画の座標）
-SIGIL_CX, SIGIL_CY = 512, 715
-CORE_R = 145      # 中心の光条＋クリスタル
-RING_R0 = 145     # ルーン環の内側
-RING_R1 = 215     # ルーン環の外側
+DESIGN_W, DESIGN_H = 1024, 1536
 
-# リボンの位置（環の下部を隠している）
-RIBBON_BOX = (328, 812, 694, 930)
+# --- 魔法陣 ---------------------------------------------------------------
+# sample 上での中心と外周半径（設計座標）。ここに maho.png を合わせて置く。
+SIGIL_CX, SIGIL_CY = 512, 720
+SIGIL_R = 215
+# maho.png 側の中心・外周半径・「環と中心の境目」（実測値、maho のピクセル単位）
+MAHO_CX, MAHO_CY = 628, 622
+MAHO_R = 581.5
+MAHO_SPLIT = 402
+MAHO_EDGE = 600          # これより外は切り捨てる
 
-# 背景バンド（城と空）の切り出し範囲。左右は外周の枠線を避けて内側で切る。
+# --- リボン ---------------------------------------------------------------
+RIBBON_BOX = (318, 800, 706, 945)
+# リボンの上、左右の折り返しに挟まれた空きの範囲。sample ではここに
+# クリスタルの先端が写り込むので消す（クリスタルは maho 側から重ねる）。
+RIBBON_GAP = (462, 562, 850)     # x0, x1, この y より上
+
+# --- 背景バンド -----------------------------------------------------------
 BAND_BOX = (33, 500, 991, 1004)
-BAND_FADE = 26      # 上下の端を紙になじませるフェード幅
+BAND_FADE = 26
+
+# 左右反転して対になる飾り
+MIRRORED = ('rule-small', 'cloud', 'section-rule', 'star')
+
+# 切り出した各パーツの設計座標上の位置 name -> (x, y, w, h)
+PLACED = {}
 
 
 # ---------------------------------------------------------------- 基本操作
@@ -52,7 +78,7 @@ def bg_color(im, margin=3):
     return samples[len(samples) // 2]
 
 
-def key_out(im, bg=None, low=10, high=60, warm_only=False):
+def key_out(im, bg=None, low=10, high=60):
     """地の色からの距離をアルファにする。
 
     low  … これ以下の色差は完全透過
@@ -72,10 +98,6 @@ def key_out(im, bg=None, low=10, high=60, warm_only=False):
             r, g, b = src[x, y]
             d = max(abs(r - bg[0]), abs(g - bg[1]), abs(b - bg[2]))
             a = 0 if d <= low else 255 if d >= high else int(255 * (d - low) / span)
-            if warm_only and a:
-                # 金の線は暖色（R>B）。城や空の青灰色はここで落とす。
-                warm = (r - b - 8) / 28.0
-                a = int(a * min(1.0, max(0.0, warm)))
             if a == 0:
                 dst[x, y] = (0, 0, 0, 0)
             else:
@@ -97,59 +119,70 @@ def tighten(im, pad=2):
     return im.crop((x0, y0, min(im.width, x1 + pad), min(im.height, y1 + pad))), (x0, y0)
 
 
-def ring_mask(size, cx, cy, r0, r1, feather=6):
-    """円環（r0〜r1）のマスク。境界はフェードさせる。"""
+def keep_largest_blob(im, thresh=40):
+    """アルファの最大連結成分だけを残す。
+
+    リボンは空と城の上に描かれているので、色差だけで抜くと周囲の雲や
+    城の切れ端が小さな島として残る。ひと続きの本体だけを採用して落とす。
+    """
+    w, h = im.size
+    a = im.getchannel('A').load()
+    seen = bytearray(w * h)
+    best = None
+    best_n = 0
+    for sy in range(h):
+        for sx in range(w):
+            i0 = sy * w + sx
+            if seen[i0] or a[sx, sy] < thresh:
+                continue
+            stack = [i0]
+            seen[i0] = 1
+            cells = []
+            while stack:
+                i = stack.pop()
+                cells.append(i)
+                y, x = divmod(i, w)
+                for nx, ny in ((x-1, y), (x+1, y), (x, y-1), (x, y+1)):
+                    if 0 <= nx < w and 0 <= ny < h:
+                        j = ny * w + nx
+                        if not seen[j] and a[nx, ny] >= thresh:
+                            seen[j] = 1
+                            stack.append(j)
+            if len(cells) > best_n:
+                best_n = len(cells)
+                best = cells
+    if not best:
+        return im
+    mask = Image.new('L', (w, h), 0)
+    mp = mask.load()
+    for i in best:
+        y, x = divmod(i, w)
+        mp[x, y] = 255
+    # 本体の内側（文字などの穴）は残すため、輪郭を少し太らせてから塗りつぶす
+    mask = mask.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(5))
+    im = im.copy()
+    im.putalpha(ImageChops.multiply(im.getchannel('A'), mask))
+    return im
+
+
+def radial_mask(size, cx, cy, r0, r1, feather=6):
+    """r0〜r1 の円環（r0=0 なら円板）のマスク。境界はフェードさせる。"""
     w, h = size
     m = Image.new('L', (w, h), 0)
     px = m.load()
     for y in range(h):
-        dy = y - cy
-        for x in range(w):
-            dx = x - cx
-            d = math.hypot(dx, dy)
-            if d < r0 - feather or d > r1 + feather:
-                v = 0
-            elif d < r0:
-                v = int(255 * (d - (r0 - feather)) / feather)
-            elif d > r1:
-                v = int(255 * ((r1 + feather) - d) / feather)
-            else:
-                v = 255
-            px[x, y] = v
-    return m
-
-
-def disc_mask(size, cx, cy, r, feather=6, clip_below=None):
-    w, h = size
-    m = Image.new('L', (w, h), 0)
-    px = m.load()
-    for y in range(h):
-        if clip_below is not None and y > clip_below:
-            continue
         dy = y - cy
         for x in range(w):
             d = math.hypot(x - cx, dy)
-            if d > r:
+            if d > r1 + feather or (r0 and d < r0 - feather):
                 v = 0
-            elif d > r - feather:
-                v = int(255 * (r - d) / feather)
+            elif d > r1:
+                v = int(255 * (r1 + feather - d) / feather)
+            elif r0 and d < r0:
+                v = int(255 * (d - (r0 - feather)) / feather)
             else:
                 v = 255
             px[x, y] = v
-    return m
-
-
-def sector_mask(size, cx, cy, a0, a1, feather=12):
-    """角度 a0〜a1（度、+x軸から時計回り／下が90度）のマスク。"""
-    w, h = size
-    m = Image.new('L', (w, h), 0)
-    px = m.load()
-    for y in range(h):
-        for x in range(w):
-            ang = math.degrees(math.atan2(y - cy, x - cx)) % 360
-            if a0 <= ang <= a1:
-                d = min(ang - a0, a1 - ang)
-                px[x, y] = 255 if d >= feather else int(255 * d / feather)
     return m
 
 
@@ -157,9 +190,9 @@ def soften(im, cx, cy, r_full, r_fade, radius=34, clip_below=None):
     """円形の範囲を強くぼかして、そこに描かれた図形を消す。
 
     水彩の空は元々なめらかなので、ぼかすと線画だけが溶けて地が残る。
+    先に彩度を落とすのは、そのまま暈すとクリスタルの青が大きな青いにじみとして
+    残ってしまうため。
     """
-    # 先に彩度を落としてからぼかす。そのまま暈すとクリスタルの青が
-    # 大きな青いにじみとして残ってしまうため。
     blurred = ImageEnhance.Color(im).enhance(0.28).filter(
         ImageFilter.GaussianBlur(radius))
     mask = Image.new('L', im.size, 0)
@@ -185,27 +218,66 @@ def flatten_texture(im, blur=24):
     """紙のパッチから大きなムラを取り除き、タイルの継ぎ目を目立たなくする。"""
     im = im.convert('RGB')
     base = im.filter(ImageFilter.GaussianBlur(blur))
-    mean = tuple(int(sum(im.getdata(i)) / (im.width * im.height)) for i in range(3))
-    flat = ImageChops.add(ImageChops.subtract(im, base, scale=1, offset=0),
+    n = im.width * im.height
+    mean = tuple(int(sum(im.getchannel(i).getdata()) / n) for i in range(3))
+    return ImageChops.add(ImageChops.subtract(im, base, scale=1, offset=0),
                           Image.new('RGB', im.size, mean))
-    return flat
 
 
-# 切り出した各パーツの原画上の位置 name -> (x, y, w, h)
-PLACED = {}
+# ---------------------------------------------------------------- パーツ定義
 
-DESIGN_W, DESIGN_H = 1024, 1536
+# 設計座標での切り出し範囲。tight=True のものは中身に合わせて自動で詰める。
+PARTS = {
+    # 外周の飾り
+    'corner-tl':     dict(box=(10, 10, 108, 148), alpha=True, tight=True),
+    'corner-tr':     dict(box=(916, 10, 1014, 148), alpha=True, tight=True),
+    'corner-bl':     dict(box=(10, 1388, 108, 1526), alpha=True, tight=True),
+    'corner-br':     dict(box=(916, 1388, 1014, 1526), alpha=True, tight=True),
 
-# 左右反転して対になる飾り。反転後の left も CSS に出しておく。
-MIRRORED = ('rule-small', 'cloud', 'section-rule', 'star')
+    # 枠線（1px を繰り返して辺に敷く）
+    'border-v':      dict(box=(12, 300, 40, 301), alpha=True),
+    'border-h':      dict(box=(200, 12, 201, 40), alpha=True),
 
+    # ヘッダーの紋章
+    'emblem-top':    dict(box=(366, 34, 658, 220), alpha=True, tight=True),
+
+    # ARCANE FORTUNE / ORACLE OF FATE 脇の飾り罫
+    'rule-small':    dict(box=(105, 111, 290, 144), alpha=True, tight=True, low=7),
+
+    # 見出し脇の四芒星
+    'star':          dict(box=(266, 228, 308, 282), alpha=True, tight=True),
+
+    # タイトル下の点線＋小クリスタル
+    'divider':       dict(box=(190, 318, 834, 378), alpha=True, tight=True,
+                          low=5, high=32),
+
+    # 「魔法のおみくじを〜」脇の雲飾り
+    'cloud':         dict(box=(130, 380, 252, 445), alpha=True, tight=True,
+                          low=9, high=44),
+
+    # セクション見出しの飾り（見出し文字を巻き込まないよう罫線の範囲だけ切る）
+    'section-rule':  dict(box=(325, 1002, 420, 1030), alpha=True, tight=True, low=6),
+
+    # フッターの円形紋章
+    'emblem-bottom': dict(box=(438, 1412, 592, 1534), alpha=True, tight=True),
+}
+
+# おみくじ5種のカード（静的な図版なので文字ごと1枚絵として使う）。
+# 原画のカードは幅も間隔も揃っていないので、1枚ずつ実測した位置で切る。
+CARD_BOXES = [
+    (111, 1035, 268, 1299),
+    (281, 1035, 426, 1299),
+    (440, 1035, 584, 1299),
+    (598, 1035, 742, 1299),
+    (756, 1035, 901, 1299),
+]
+for _i, _b in enumerate(CARD_BOXES):
+    PARTS['card-%d' % (_i + 1)] = dict(box=_b)
+
+
+# ---------------------------------------------------------------- 生成
 
 def write_css():
-    """原画の座標をそのまま使える CSS を生成する。
-
-    画面は 1024x1536 の「原画そのままの座標系」を組み、
-    ブラウザ側で画面サイズに合わせて拡大縮小する。
-    """
     lines = [
         '/* slice_assets.py が自動生成。直接編集しないこと。 */',
         '/* 原画 %dx%d の座標系にパーツを配置する。 */' % (DESIGN_W, DESIGN_H),
@@ -236,107 +308,59 @@ def write_css():
     print('%-16s %s' % ('assets.css', path))
 
 
-# ---------------------------------------------------------------- パーツ定義
-
-CARD_CX = [189 + 160 * i for i in range(5)]
-CARD_TOP, CARD_BOTTOM, CARD_HALF = 1035, 1299, 77
-
-PARTS = {
-    # 外周の飾り
-    'corner-tl':     dict(box=(12, 12, 116, 142), alpha=True, tight=True),
-    'corner-tr':     dict(box=(908, 12, 1012, 142), alpha=True, tight=True),
-    'corner-bl':     dict(box=(12, 1394, 116, 1524), alpha=True, tight=True),
-    'corner-br':     dict(box=(908, 1394, 1012, 1524), alpha=True, tight=True),
-
-    # 枠線（1px を繰り返して辺に敷く）
-    'border-v':      dict(box=(12, 300, 40, 301), alpha=True, bg=(247, 244, 241)),
-    'border-h':      dict(box=(200, 12, 201, 40), alpha=True, bg=(248, 245, 242)),
-
-    # ヘッダーの紋章
-    'emblem-top':    dict(box=(376, 30, 648, 208), alpha=True, tight=True),
-
-    # ARCANE FORTUNE / ORACLE OF FATE 脇の飾り罫
-    'rule-small':    dict(box=(105, 108, 300, 134), alpha=True, tight=True, low=6),
-
-    # 見出し脇の四芒星
-    'star':          dict(box=(266, 234, 310, 278), alpha=True, tight=True),
-
-    # タイトル下の点線＋小クリスタル
-    'divider':       dict(box=(200, 318, 824, 378), alpha=True, tight=True,
-                          low=4, high=30),
-
-    # 「魔法のおみくじを〜」脇の雲飾り
-    'cloud':         dict(box=(140, 378, 258, 440), alpha=True, tight=True,
-                          low=6, high=40),
-
-    # セクション見出しの飾り（見出し文字を巻き込まないよう罫線の行だけ切る）
-    'section-rule':  dict(box=(346, 1006, 408, 1024), alpha=True, tight=True, low=6),
-
-    # フッターの円形紋章
-    'emblem-bottom': dict(box=(444, 1420, 584, 1536), alpha=True, tight=True),
-}
-
-# おみくじ5種のカード（静的な図版なので文字ごと1枚絵として使う）
-for i, cx in enumerate(CARD_CX):
-    PARTS['card-%d' % (i + 1)] = dict(
-        box=(cx - CARD_HALF, CARD_TOP, cx + CARD_HALF, CARD_BOTTOM))
+def report(name, im, x, y):
+    PLACED[name] = (round(x), round(y), round(im.width / SCALE), round(im.height / SCALE))
+    print('%-16s %4dx%-4d → 設計 %3dx%-3d @ (%d,%d)' % (
+        name, im.width, im.height, PLACED[name][2], PLACED[name][3], PLACED[name][0], PLACED[name][1]))
 
 
-def build_sigil(im):
-    """魔法陣を「回るルーン環」と「中心の光条＋クリスタル」に分ける。"""
-    box = (SIGIL_CX - RING_R1 - 8, SIGIL_CY - RING_R1 - 8,
-           SIGIL_CX + RING_R1 + 8, SIGIL_CY + RING_R1 + 8)
-    crop = im.crop(box)
-    cx = SIGIL_CX - box[0]
-    cy = SIGIL_CY - box[1]
-    keyed = key_out(crop, low=13, high=68)
+def build_sigil():
+    """魔法陣を「回るルーン環」と「中心の光条＋クリスタル」に分ける。
 
-    # --- ルーン環 ---
-    # 環は城の上に重なっているので、金色（暖色）だけを残して城を落とす。
-    ring = key_out(crop, low=21, high=72, warm_only=True)
-    ring.putalpha(ImageChops.multiply(
-        ring.getchannel('A'), ring_mask(ring.size, cx, cy, RING_R0, RING_R1)))
+    maho.png は真円で、リボンにも城にも隠れていないので、
+    以前のような欠けの補完や城の写り込み除去は要らない。
+    """
+    im = Image.open(SRC_SIGIL).convert('RGB')
+    keyed = key_out(im, bg=(255, 255, 255), low=12, high=64)
 
-    # 環の下部はリボンに隠れて欠けている（リボンの金縁も写り込む）ので、
-    # リボンが掛かる角度帯をまるごと 180 度回した複製で置き換える。
-    # 回転させて使う飾りなので、ルーンの向きの差は目立たない。
-    donor = ring.rotate(180, resample=Image.BICUBIC, center=(cx, cy))
-    patch = sector_mask(ring.size, cx, cy, 12, 168, feather=16)
-    ring = Image.composite(donor, ring, patch)
-    PLACED['sigil-ring'] = (box[0], box[1], ring.width, ring.height)
-    ring.save(os.path.join(OUT, 'sigil-ring.png'))
-    print('%-16s %dx%d' % ('sigil-ring', ring.width, ring.height))
+    # sample 上の魔法陣に合わせる倍率（maho ピクセル → 設計座標）
+    to_design = SIGIL_R / MAHO_R
+    # 出力は sample のパーツと同じ精細さに揃える
+    px_per_design = SCALE
+    zoom = to_design * px_per_design
 
-    # --- 中心（光条＋クリスタル）---
-    core = keyed.copy()
-    core.putalpha(ImageChops.multiply(
-        core.getchannel('A'), disc_mask(core.size, cx, cy, CORE_R)))
-    # リボンより下は、クリスタルの先端が覗く中央の細い帯だけを残す
-    cpx = core.load()
-    for y in range(core.height):
-        ya = y + box[1]
-        if ya < RIBBON_BOX[1]:
-            continue
-        for x in range(core.width):
-            xa = x + box[0]
-            if ya > 848 or not (466 <= xa <= 558):
-                cpx[x, y] = (0, 0, 0, 0)
-    core, (ox, oy) = tighten(core)
-    PLACED['sigil-core'] = (box[0] + ox, box[1] + oy, core.width, core.height)
-    core.save(os.path.join(OUT, 'sigil-core.png'))
-    print('%-16s %dx%d' % ('sigil-core', core.width, core.height))
+    for name, r0, r1 in (('sigil-ring', MAHO_SPLIT, MAHO_EDGE),
+                         ('sigil-core', 0, MAHO_SPLIT)):
+        part = keyed.copy()
+        part.putalpha(ImageChops.multiply(
+            part.getchannel('A'),
+            radial_mask(part.size, MAHO_CX, MAHO_CY, r0, r1)))
+        # 中心が画像のど真ん中に来るよう正方形で切る。
+        # tighten で詰めると中心が数pxずれ、CSSで回したときに振れてしまう。
+        half = r1 + 8
+        part = part.crop((round(MAHO_CX - half), round(MAHO_CY - half),
+                          round(MAHO_CX + half), round(MAHO_CY + half)))
+        side = max(1, round(2 * half * zoom))
+        part = part.resize((side, side), Image.LANCZOS)
+        part.save(os.path.join(OUT, name + '.png'))
+        report(name, part,
+               SIGIL_CX - half * to_design, SIGIL_CY - half * to_design)
 
-    # --- リボン ---
-    rb = key_out(im.crop(RIBBON_BOX), low=13, high=60)
+
+def build_ribbon(im):
+    box = tuple(round(v * SCALE) for v in RIBBON_BOX)
+    rb = key_out(im.crop(box), low=24, high=74)
     # 上辺の中央に写り込むクリスタルの先端を消す
+    gx0, gx1, gy = RIBBON_GAP
     px = rb.load()
-    for y in range(0, 42):
-        for x in range(126, 240):
+    for y in range(0, min(rb.height, round((gy - RIBBON_BOX[1]) * SCALE))):
+        for x in range(round((gx0 - RIBBON_BOX[0]) * SCALE),
+                       min(rb.width, round((gx1 - RIBBON_BOX[0]) * SCALE))):
             px[x, y] = (0, 0, 0, 0)
+    rb = keep_largest_blob(rb)
     rb, (ox, oy) = tighten(rb)
-    PLACED['ribbon'] = (RIBBON_BOX[0] + ox, RIBBON_BOX[1] + oy, rb.width, rb.height)
     rb.save(os.path.join(OUT, 'ribbon.png'))
-    print('%-16s %dx%d' % ('ribbon', rb.width, rb.height))
+    report('ribbon', rb, RIBBON_BOX[0] + ox / SCALE, RIBBON_BOX[1] + oy / SCALE)
 
 
 def build_background(im):
@@ -346,58 +370,65 @@ def build_background(im):
     HTML側では同じ位置にリボン画像を重ねる。こうすると回るルーン環が
     背景のリボンより手前・重ねたリボンより奥に入り、原画通りの前後関係になる。
     """
-    band = im.crop(BAND_BOX).convert('RGB')
-    cx = SIGIL_CX - BAND_BOX[0]
-    cy = SIGIL_CY - BAND_BOX[1]
-    band = soften(band, cx, cy, r_full=196, r_fade=252, radius=34,
-                  clip_below=RIBBON_BOX[1] - BAND_BOX[1])
+    box = tuple(round(v * SCALE) for v in BAND_BOX)
+    band = im.crop(box).convert('RGB')
+    band = soften(band,
+                  (SIGIL_CX - BAND_BOX[0]) * SCALE,
+                  (SIGIL_CY - BAND_BOX[1]) * SCALE,
+                  r_full=196 * SCALE, r_fade=252 * SCALE, radius=round(34 * SCALE),
+                  clip_below=round((RIBBON_BOX[1] + 12 - BAND_BOX[1]) * SCALE))
 
     # 上下の端を透過させて紙の地になじませる
     band = band.convert('RGBA')
+    fade = round(BAND_FADE * SCALE)
     a = Image.new('L', band.size, 255)
     ap = a.load()
     for y in range(band.height):
         v = 255
-        if y < BAND_FADE:
-            v = int(255 * y / BAND_FADE)
-        elif y > band.height - BAND_FADE:
-            v = int(255 * (band.height - y) / BAND_FADE)
+        if y < fade:
+            v = int(255 * y / fade)
+        elif y > band.height - fade:
+            v = int(255 * (band.height - y) / fade)
         for x in range(band.width):
             ap[x, y] = v
     band.putalpha(a)
-    PLACED['bg-castles'] = (BAND_BOX[0], BAND_BOX[1], band.width, band.height)
     band.save(os.path.join(OUT, 'bg-castles.png'))
-    print('%-16s %dx%d' % ('bg-castles', band.width, band.height))
+    report('bg-castles', band, BAND_BOX[0], BAND_BOX[1])
 
 
 def build():
-    if not os.path.exists(SRC):
-        sys.exit('原画が見つかりません: %s' % SRC)
+    global SCALE
+    if not os.path.exists(SRC) or not os.path.exists(SRC_SIGIL):
+        sys.exit('原画が見つかりません: %s / %s' % (SRC, SRC_SIGIL))
     os.makedirs(OUT, exist_ok=True)
     im = Image.open(SRC).convert('RGB')
+    SCALE = im.width / float(DESIGN_W)
+    print('原画 %dx%d  設計座標との倍率 %.4f\n' % (im.width, im.height, SCALE))
 
     for name, spec in sorted(PARTS.items()):
-        crop = im.crop(spec['box'])
+        box = tuple(round(v * SCALE) for v in spec['box'])
+        crop = im.crop(box)
         ox = oy = 0
         if spec.get('alpha'):
             crop = key_out(crop, bg=spec.get('bg'),
                            low=spec.get('low', 10), high=spec.get('high', 60))
             if spec.get('tight'):
                 crop, (ox, oy) = tighten(crop)
-        PLACED[name] = (spec['box'][0] + ox, spec['box'][1] + oy,
-                        crop.width, crop.height)
         crop.save(os.path.join(OUT, name + '.png'))
-        print('%-16s %dx%d' % (name, crop.width, crop.height))
+        report(name, crop, spec['box'][0] + ox / SCALE, spec['box'][1] + oy / SCALE)
 
     # 紙の地。タイル用にムラを均す。
-    paper = flatten_texture(im.crop((60, 150, 240, 310)))
+    paper = flatten_texture(im.crop(tuple(round(v * SCALE) for v in (60, 150, 240, 310))))
     paper.save(os.path.join(OUT, 'paper.png'))
-    print('%-16s %dx%d' % ('paper', paper.width, paper.height))
+    print('%-16s %dx%d（タイル）' % ('paper', paper.width, paper.height))
 
-    build_sigil(im)
+    build_sigil()
+    build_ribbon(im)
     build_background(im)
     write_css()
 
+
+SCALE = 1.0
 
 if __name__ == '__main__':
     build()

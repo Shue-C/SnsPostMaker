@@ -21,75 +21,75 @@
   background-image: url('../assets/border-v.png');
 }
 .a-card-1 {
-  left: 112px; top: 1035px; width: 154px; height: 264px;
+  left: 111px; top: 1035px; width: 157px; height: 264px;
   background-image: url('../assets/card-1.png');
 }
 .a-card-2 {
-  left: 272px; top: 1035px; width: 154px; height: 264px;
+  left: 281px; top: 1035px; width: 145px; height: 264px;
   background-image: url('../assets/card-2.png');
 }
 .a-card-3 {
-  left: 432px; top: 1035px; width: 154px; height: 264px;
+  left: 440px; top: 1035px; width: 144px; height: 264px;
   background-image: url('../assets/card-3.png');
 }
 .a-card-4 {
-  left: 592px; top: 1035px; width: 154px; height: 264px;
+  left: 598px; top: 1035px; width: 144px; height: 264px;
   background-image: url('../assets/card-4.png');
 }
 .a-card-5 {
-  left: 752px; top: 1035px; width: 154px; height: 264px;
+  left: 756px; top: 1035px; width: 145px; height: 264px;
   background-image: url('../assets/card-5.png');
 }
 .a-cloud {
-  left: 140px; top: 378px; width: 103px; height: 62px;
+  left: 130px; top: 380px; width: 90px; height: 65px;
   background-image: url('../assets/cloud.png');
 }
 .a-cloud.mirror-x {
-  left: 781px;
+  left: 804px;
   transform: scaleX(-1);
 }
 .a-corner-bl {
-  left: 17px; top: 1394px; width: 99px; height: 118px;
+  left: 17px; top: 1388px; width: 91px; height: 124px;
   background-image: url('../assets/corner-bl.png');
 }
 .a-corner-br {
-  left: 908px; top: 1394px; width: 99px; height: 118px;
+  left: 916px; top: 1388px; width: 98px; height: 124px;
   background-image: url('../assets/corner-br.png');
 }
 .a-corner-tl {
-  left: 18px; top: 15px; width: 98px; height: 127px;
+  left: 15px; top: 15px; width: 93px; height: 133px;
   background-image: url('../assets/corner-tl.png');
 }
 .a-corner-tr {
-  left: 908px; top: 15px; width: 98px; height: 127px;
+  left: 916px; top: 15px; width: 91px; height: 133px;
   background-image: url('../assets/corner-tr.png');
 }
 .a-divider {
-  left: 200px; top: 318px; width: 624px; height: 60px;
+  left: 190px; top: 318px; width: 644px; height: 60px;
   background-image: url('../assets/divider.png');
 }
 .a-emblem-bottom {
-  left: 444px; top: 1420px; width: 140px; height: 116px;
+  left: 438px; top: 1412px; width: 154px; height: 122px;
   background-image: url('../assets/emblem-bottom.png');
 }
 .a-emblem-top {
-  left: 376px; top: 30px; width: 272px; height: 178px;
+  left: 366px; top: 34px; width: 292px; height: 186px;
   background-image: url('../assets/emblem-top.png');
 }
 .a-ribbon {
-  left: 328px; top: 812px; width: 366px; height: 118px;
+  left: 318px; top: 800px; width: 388px; height: 145px;
   background-image: url('../assets/ribbon.png');
 }
 .a-rule-small {
-  left: 111px; top: 108px; width: 187px; height: 22px;
+  left: 110px; top: 111px; width: 171px; height: 33px;
   background-image: url('../assets/rule-small.png');
 }
 .a-rule-small.mirror-x {
-  left: 726px;
+  left: 743px;
   transform: scaleX(-1);
 }
 .a-section-rule {
-  left: 348px; top: 1010px; width: 55px; height: 11px;
+  left: 330px; top: 1010px; width: 73px; height: 18px;
   background-image: url('../assets/section-rule.png');
 }
 .a-section-rule.mirror-x {
@@ -97,18 +97,18 @@
   transform: scaleX(-1);
 }
 .a-sigil-core {
-  left: 366px; top: 569px; width: 293px; height: 282px;
+  left: 360px; top: 568px; width: 303px; height: 303px;
   background-image: url('../assets/sigil-core.png');
 }
 .a-sigil-ring {
-  left: 289px; top: 492px; width: 446px; height: 446px;
+  left: 287px; top: 495px; width: 450px; height: 450px;
   background-image: url('../assets/sigil-ring.png');
 }
 .a-star {
-  left: 271px; top: 234px; width: 30px; height: 44px;
+  left: 271px; top: 232px; width: 31px; height: 47px;
   background-image: url('../assets/star.png');
 }
 .a-star.mirror-x {
-  left: 723px;
+  left: 722px;
   transform: scaleX(-1);
 }
