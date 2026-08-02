@@ -12,8 +12,9 @@
   --gold:     #b99a55;
   --paper:    #f6f2ec;
   --danger:   #9d3b33;
-  --mincho: "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho",
-            "YuMincho", "MS PMincho", serif;
+  /* Sawarabi Mincho は同梱（css/fonts.css）。以降は端末側の明朝へフォールバック */
+  --mincho: "Sawarabi Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro",
+            "Yu Mincho", "YuMincho", "MS PMincho", serif;
   --latin: "Palatino", "Palatino Linotype", "Times New Roman", Georgia, serif;
 }
 
@@ -74,19 +75,14 @@ html, body {
 .edge-left { left: 12px; }
 .edge-right { left: 984px; transform: scaleX(-1); }
 
-/* 左右反転して使い回す飾り */
-.rule--r, .cloud--r, .srule--r, .star--r, .fstar--r { transform: scaleX(-1); }
-.rule--r   { left: 726px; }
-.cloud--r  { left: 781px; }
-.srule--r  { left: 579px; }
-.star--r   { left: 723px; }
+/* 左右反転して対になる飾りの位置は css/assets.css の .mirror-x が持つ */
 
 /* フッターの小さな星（同じ素材を縮小して使う） */
 .fstar--l, .fstar--r {
   top: 1401px; width: 15px; height: 22px;
 }
 .fstar--l { left: 336px; }
-.fstar--r { left: 673px; }
+.fstar--r { left: 673px; transform: scaleX(-1); }
 
 /* ---------------------------------------------- 文字 */
 
@@ -113,7 +109,7 @@ html, body {
   width: 100%;
   margin: 0;
   font-size: 47px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.15;
   letter-spacing: .04em;
   text-indent: .04em;
@@ -140,8 +136,8 @@ html, body {
   left: 0;
   width: 100%;
   margin: 0;
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 31px;
+  font-weight: 400;
   line-height: 1.2;
   letter-spacing: .05em;
   text-indent: .05em;
