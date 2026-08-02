@@ -1,0 +1,396 @@
+/* 魔導おみくじ — iPad キオスク用スタイル
+   ブランドの世界観（精霊都市・鉱石・真鍮）に合わせた深藍＋真鍮金の配色 */
+
+:root {
+  --ink:        #0b1020;
+  --ink-2:      #131a33;
+  --brass:      #c9a227;
+  --brass-lite: #e8cf82;
+  --aether:     #6fd6e0;
+  --paper:      #f2ece0;
+  --danger:     #e2705f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* 背景の霊気 */
+.aether {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 38%, rgba(111, 214, 224, .16), transparent 70%),
+    radial-gradient(80% 60% at 50% 120%, rgba(201, 162, 39, .18), transparent 70%),
+    linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 60%, var(--ink) 100%);
+  animation: breathe 9s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes breathe {
+  0%, 100% { opacity: .85; }
+  50%      { opacity: 1; }
+}
+
+/* ヘッダー */
+.masthead {
+  position: relative;
+  text-align: center;
+  padding: 4vh 4vw 0;
+}
+.brand {
+  margin: 0;
+  font-size: clamp(12px, 1.6vw, 18px);
+  letter-spacing: .42em;
+  text-indent: .42em;
+  color: var(--brass-lite);
+  opacity: .8;
+}
+.title {
+  margin: .35em 0 0;
+  font-size: clamp(28px, 5.2vw, 56px);
+  font-weight: 500;
+  letter-spacing: .24em;
+  text-indent: .24em;
+}
+.title::after {
+  content: "";
+  display: block;
+  width: min(240px, 40vw);
+  height: 1px;
+  margin: .6em auto 0;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+}
+
+/* ビュー切り替え */
+.stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2vh 5vw;
+}
+.view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3vh;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(.97);
+  transition: opacity .45s ease, transform .45s ease, visibility .45s;
+}
+.view.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* 引くボタン */
+.draw-btn {
+  position: relative;
+  width: min(46vh, 62vw);
+  height: min(46vh, 62vw);
+  border: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, #1d2748 0%, #10182f 62%, #0a0f1e 100%);
+  box-shadow:
+    0 0 0 2px rgba(201, 162, 39, .55),
+    0 0 0 12px rgba(201, 162, 39, .08),
+    0 24px 60px rgba(0, 0, 0, .55),
+    inset 0 0 60px rgba(111, 214, 224, .10);
+  color: var(--paper);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .3s ease;
+}
+.draw-btn:active {
+  transform: scale(.965);
+  box-shadow:
+    0 0 0 2px var(--brass),
+    0 0 0 16px rgba(201, 162, 39, .14),
+    0 12px 30px rgba(0, 0, 0, .5),
+    inset 0 0 80px rgba(111, 214, 224, .18);
+}
+.draw-btn:disabled { opacity: .45; }
+
+.draw-btn__ring {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 1px dashed rgba(232, 207, 130, .45);
+  animation: spin 32s linear infinite;
+}
+.draw-btn__glyph {
+  display: block;
+  font-size: clamp(30px, 5vw, 52px);
+  color: var(--brass-lite);
+  text-shadow: 0 0 18px rgba(232, 207, 130, .6);
+}
+.draw-btn__label {
+  display: block;
+  margin-top: .5em;
+  font-size: clamp(20px, 3.4vw, 34px);
+  letter-spacing: .18em;
+  text-indent: .18em;
+}
+.hint {
+  margin: 0;
+  font-size: clamp(13px, 1.8vw, 18px);
+  letter-spacing: .2em;
+  color: rgba(242, 236, 224, .55);
+}
+
+/* 抽選演出 */
+.sigil {
+  position: relative;
+  width: min(42vh, 58vw);
+  height: min(42vh, 58vw);
+}
+.sigil__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.sigil circle, .sigil polygon {
+  fill: none;
+  stroke: var(--brass-lite);
+  stroke-width: 1.2;
+  transform-origin: 100px 100px;
+  filter: drop-shadow(0 0 6px rgba(232, 207, 130, .55));
+}
+.ring--slow     { stroke-dasharray: 3 9;  animation: spin 14s linear infinite; }
+.ring--fast     { stroke-dasharray: 16 6; animation: spin 5s linear infinite; opacity: .8; }
+.ring--slow-rev { stroke-dasharray: 2 6;  animation: spin 9s linear infinite reverse; }
+.star--a { animation: spin 11s linear infinite;         stroke: var(--aether); opacity: .75; }
+.star--b { animation: spin 11s linear infinite reverse; stroke: var(--aether); opacity: .75; }
+.core {
+  fill: rgba(111, 214, 224, .18);
+  stroke: var(--aether);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.sigil__spark {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(111, 214, 224, .35), transparent 62%);
+  animation: pulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes spin  { to { transform: rotate(360deg); } }
+@keyframes pulse {
+  0%, 100% { opacity: .45; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+.drawing-text {
+  margin: 0;
+  font-size: clamp(17px, 2.6vw, 26px);
+  letter-spacing: .22em;
+  text-indent: .22em;
+  color: var(--brass-lite);
+}
+.drawing-text::after {
+  content: "…";
+  animation: ellipsis 1.4s steps(4) infinite;
+}
+@keyframes ellipsis {
+  0%   { opacity: .25; }
+  50%  { opacity: 1; }
+  100% { opacity: .25; }
+}
+
+/* 結果 */
+.result__lead {
+  margin: 0;
+  font-size: clamp(14px, 2vw, 20px);
+  letter-spacing: .3em;
+  text-indent: .3em;
+  color: rgba(242, 236, 224, .6);
+}
+.result__label {
+  margin: 0;
+  font-size: clamp(40px, 9vw, 96px);
+  letter-spacing: .12em;
+  text-indent: .12em;
+  color: var(--brass-lite);
+  text-shadow: 0 0 30px rgba(232, 207, 130, .45);
+}
+.result__note {
+  margin: 0;
+  line-height: 1.9;
+  font-size: clamp(15px, 2.2vw, 22px);
+  letter-spacing: .14em;
+  color: rgba(242, 236, 224, .78);
+}
+.preview {
+  max-height: 34vh;
+  overflow: hidden;
+  border: 1px solid rgba(232, 207, 130, .35);
+  background: #fff;
+  padding: 6px;
+}
+.preview canvas {
+  display: block;
+  max-height: calc(34vh - 12px);
+  width: auto;
+}
+
+/* エラー */
+.error__title {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 30px);
+  letter-spacing: .16em;
+  color: var(--danger);
+}
+.error__detail {
+  margin: 0;
+  max-width: 42em;
+  text-align: center;
+  line-height: 1.8;
+  font-size: clamp(14px, 1.9vw, 18px);
+  color: rgba(242, 236, 224, .82);
+  font-family: system-ui, sans-serif;
+}
+
+/* フッター */
+.footerbar {
+  padding: 0 4vw 2.2vh;
+  text-align: center;
+}
+.status-line {
+  font-family: system-ui, sans-serif;
+  font-size: clamp(10px, 1.2vw, 13px);
+  letter-spacing: .1em;
+  color: rgba(242, 236, 224, .3);
+}
+
+/* ボタン共通 */
+.primary-btn, .ghost-btn {
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: .12em;
+  padding: 12px 22px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.primary-btn {
+  border: 1px solid var(--brass);
+  background: rgba(201, 162, 39, .18);
+  color: var(--brass-lite);
+}
+.ghost-btn {
+  border: 1px solid rgba(242, 236, 224, .3);
+  background: transparent;
+  color: rgba(242, 236, 224, .8);
+}
+
+/* 設定（右上を1.5秒長押しで開く） */
+.settings-toggle {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 76px;
+  height: 76px;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  z-index: 20;
+}
+/* display を指定した要素には hidden 属性が効かないので明示する */
+.settings[hidden], .preview[hidden] { display: none; }
+.settings {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 7, 16, .88);
+  padding: 4vh 4vw;
+  overflow: auto;
+}
+.settings__panel {
+  width: min(560px, 100%);
+  background: var(--ink-2);
+  border: 1px solid rgba(232, 207, 130, .3);
+  border-radius: 8px;
+  padding: 26px;
+  font-family: system-ui, sans-serif;
+}
+.settings__panel h2 {
+  margin: 0 0 18px;
+  font-family: inherit;
+  font-size: 18px;
+  letter-spacing: .2em;
+  color: var(--brass-lite);
+}
+.field { display: block; margin-bottom: 14px; }
+.field > span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: rgba(242, 236, 224, .65);
+}
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(242, 236, 224, .25);
+  background: rgba(0, 0, 0, .3);
+  color: var(--paper);
+}
+.field-row { display: flex; gap: 12px; }
+.field-row .field { flex: 1; }
+.field--check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.field--check > span { margin: 0; }
+.field--check input { width: 20px; height: 20px; }
+.settings__info {
+  margin: 4px 0 18px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(242, 236, 224, .5);
+  white-space: pre-wrap;
+}
+.settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aether, .draw-btn__ring, .ring--slow, .ring--fast, .ring--slow-rev,
+  .star--a, .star--b, .core, .sigil__spark, .drawing-text::after {
+    animation: none;
+  }
+}
