@@ -377,7 +377,7 @@ def post_x(text, images, dry_run):
     result = x_request("POST", f"{X_API}/2/tweets", creds, json_body=body)
     tweet_id = result["data"]["id"]
     print(f"Xに投稿しました: https://x.com/i/web/status/{tweet_id}")
-    print("※無料枠の目安: 500投稿/月・17投稿/24時間")
+    print("※X APIはPay-Per-Use課金です（投稿1件$0.015、リンク付き$0.20）。残高はconsole.x.comのBillingで確認できます。")
 
 
 # ---------------------------------------------------------------- main
