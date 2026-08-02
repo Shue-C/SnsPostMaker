@@ -3,7 +3,7 @@
  *
  *   待機 →（クリスタルをタップ）→ 演出（約3秒）→ 印刷 → 結果 → 待機
  *
- * 画面は原画と同じ 1024x1536 の座標系で組んであり、ここで画面サイズに
+ * 画面は原画と同じ 1024px 幅の座標系で組んであり、ここで画面サイズに
  * 合わせた倍率（--s）を計算する。演出中の裏で「抽選」「画像のラスター化」
  * 「プリンター接続」を並行して進めるので、演出が終わった瞬間に印刷が始まる。
  */
@@ -13,9 +13,6 @@
   var SETTINGS_KEY = 'omikuji.settings.v1';
   var HISTORY_KEY = 'omikuji.history.v1';
   var HISTORY_MAX = 500;
-
-  var DESIGN_W = 1024;
-  var DESIGN_H = 1536;
 
   var TEXT = {
     idle: {
@@ -51,8 +48,13 @@
   // ------------------------------------------------------------ 画面サイズ
 
   function fitCanvas() {
-    var s = Math.min(global.innerWidth / DESIGN_W, global.innerHeight / DESIGN_H);
-    el.canvas.style.setProperty('--s', s);
+    // キャンバスの実寸（CSS側の width/height）から倍率を出すので、
+    // レイアウトを詰めてもここを直す必要はない。
+    var w = el.canvas.offsetWidth;
+    var h = el.canvas.offsetHeight;
+    if (!w || !h) return;
+    el.canvas.style.setProperty('--s', Math.min(global.innerWidth / w,
+                                                global.innerHeight / h));
   }
 
   // ------------------------------------------------------------ 設定
