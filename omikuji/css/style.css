@@ -6,24 +6,30 @@
  */
 
 :root {
-  --ink:      #16224a;   /* 見出しの濃紺 */
-  --ink-soft: #3b4256;   /* 本文 */
-  --ink-blue: #24356e;   /* フッターの一文 */
-  --gold:     #b99a55;
-  --paper:    #f6f2ec;
-  --danger:   #9d3b33;
+  --ink: #16224a;
+  /* 見出しの濃紺 */
+  --ink-soft: #3b4256;
+  /* 本文 */
+  --ink-blue: #24356e;
+  /* フッターの一文 */
+  --gold: #b99a55;
+  --paper: #f6f2ec;
+  --danger: #9d3b33;
   /* 「おみくじの種類」を外したぶん、フッター一式をこの分だけ上に寄せる。
      値を変えるだけでページの詰め具合を調整できる（0 なら原画どおり）。 */
   --footer-shift: 372px;
   /* Sawarabi Mincho は同梱（css/fonts.css）。以降は端末側の明朝へフォールバック */
   --mincho: "Sawarabi Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro",
-            "Yu Mincho", "YuMincho", "MS PMincho", serif;
+    "Yu Mincho", "YuMincho", "MS PMincho", serif;
   --latin: "Palatino", "Palatino Linotype", "Times New Roman", Georgia, serif;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   overflow: hidden;
@@ -63,20 +69,42 @@ html, body {
   position: absolute;
   pointer-events: none;
 }
-.edge-top, .edge-bottom {
-  left: 100px; right: 100px; height: 28px;
+
+.edge-top,
+.edge-bottom {
+  left: 100px;
+  right: 100px;
+  height: 28px;
   background: url('../assets/border-h.png') repeat-x;
   background-size: 1px 28px;
 }
-.edge-top { top: 12px; }
-.edge-bottom { top: 1496px; transform: scaleY(-1); }
-.edge-left, .edge-right {
-  top: 120px; bottom: 120px; width: 28px;
+
+.edge-top {
+  top: 12px;
+}
+
+.edge-bottom {
+  top: 1496px;
+  transform: scaleY(-1);
+}
+
+.edge-left,
+.edge-right {
+  top: 120px;
+  bottom: 120px;
+  width: 28px;
   background: url('../assets/border-v.png') repeat-y;
   background-size: 28px 1px;
 }
-.edge-left { left: 12px; }
-.edge-right { left: 984px; transform: scaleX(-1); }
+
+.edge-left {
+  left: 12px;
+}
+
+.edge-right {
+  left: 984px;
+  transform: scaleX(-1);
+}
 
 /* フッター一式。子要素は css/assets.css の座標のまま、群ごと上へ動かす。 */
 .footer-group {
@@ -90,11 +118,21 @@ html, body {
 /* 左右反転して対になる飾りの位置は css/assets.css の .mirror-x が持つ */
 
 /* フッターの小さな星（同じ素材を縮小して使う） */
-.fstar--l, .fstar--r {
-  top: 1401px; width: 15px; height: 22px;
+.fstar--l,
+.fstar--r {
+  top: 1403px;
+  width: 15px;
+  height: 22px;
 }
-.fstar--l { left: 336px; }
-.fstar--r { left: 673px; transform: scaleX(-1); }
+
+.fstar--l {
+  left: 320px;
+}
+
+.fstar--r {
+  left: 679px;
+  transform: scaleX(-1);
+}
 
 /* ---------------------------------------------- 文字 */
 
@@ -111,12 +149,18 @@ html, body {
   text-align: center;
   color: var(--ink);
 }
-.eyebrow--l { left: 75px; }
-.eyebrow--r { left: 689px; }
+
+.eyebrow--l {
+  left: 75px;
+}
+
+.eyebrow--r {
+  left: 689px;
+}
 
 .title {
   position: absolute;
-  top: 224px;
+  top: 194px;
   left: 0;
   width: 100%;
   margin: 0;
@@ -131,7 +175,7 @@ html, body {
 
 .subtitle {
   position: absolute;
-  top: 286px;
+  top: 253px;
   left: 0;
   width: 100%;
   margin: 0;
@@ -144,7 +188,7 @@ html, body {
 
 .lead-title {
   position: absolute;
-  top: 390px;
+  top: 369px;
   left: 0;
   width: 100%;
   margin: 0;
@@ -160,12 +204,12 @@ html, body {
 
 .lead-sub {
   position: absolute;
-  top: 447px;
+  top: 414px;
   left: 0;
   width: 100%;
   margin: 0;
   font-size: 20px;
-  line-height: 1.65;
+  line-height: 1.4;
   letter-spacing: .04em;
   text-align: center;
   color: var(--ink-soft);
@@ -174,7 +218,7 @@ html, body {
 
 .footer-phrase {
   position: absolute;
-  top: 1398px;
+  top: 1404px;
   left: 0;
   width: 100%;
   margin: 0;
@@ -185,7 +229,8 @@ html, body {
   color: var(--ink-blue);
 }
 
-.footer-left, .footer-right {
+.footer-left,
+.footer-right {
   position: absolute;
   top: 1452px;
   margin: 0;
@@ -194,17 +239,28 @@ html, body {
   letter-spacing: .06em;
   color: #4a4f5e;
 }
-.footer-left  { left: 113px; }
-.footer-right { right: 113px; }
+
+.footer-left {
+  left: 113px;
+}
+
+.footer-right {
+  right: 113px;
+}
 
 /* ---------------------------------------------- 魔法陣 */
 
-.a-sigil-ring, .a-sigil-core, .a-ribbon { transition: opacity .5s ease; }
+.a-sigil-ring,
+.a-sigil-core,
+.a-ribbon {
+  transition: opacity .5s ease;
+}
 
 #ring {
   animation: spin 90s linear infinite;
   transform-origin: 50% 50%;
 }
+
 #core {
   /* 環も中心も正方形で切り出してあるので、回転・拡大の中心は画像の中央 */
   transform-origin: 50% 50%;
@@ -216,33 +272,60 @@ html, body {
   transform-origin: 50% 50%;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* 2周して元の角度に戻るので、演出が終わってもカクつかない */
 @keyframes spin-fast {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(720deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(720deg);
+  }
 }
 
 @keyframes core-pulse {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(120, 190, 235, .35)); }
-  50%      { filter: drop-shadow(0 0 26px rgba(120, 190, 235, .95))
-                     drop-shadow(0 0 46px rgba(190, 225, 245, .6)); }
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(120, 190, 235, .35));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 26px rgba(120, 190, 235, .95)) drop-shadow(0 0 46px rgba(190, 225, 245, .6));
+  }
 }
 
 @keyframes echo-out {
-  0%   { opacity: 0;   transform: scale(.72); }
-  35%  { opacity: .55; }
-  100% { opacity: 0;   transform: scale(1.5); }
+  0% {
+    opacity: 0;
+    transform: scale(.72);
+  }
+
+  35% {
+    opacity: .55;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
 }
 
 /* 抽選中 */
 body.state-drawing #ring {
   animation: spin-fast 3.2s cubic-bezier(.3, 0, .5, 1) forwards;
 }
+
 body.state-drawing #core {
   animation: core-pulse 1.1s ease-in-out infinite;
 }
+
 body.state-drawing .ring-echo {
   animation: echo-out 1.6s ease-out infinite;
 }
@@ -251,15 +334,24 @@ body.state-drawing .ring-echo {
 body.state-result #core {
   animation: core-pulse 2.6s ease-in-out infinite;
 }
+
 body.state-result .lead-title {
-  top: 366px;
-  font-size: 50px;
+  top: 371px;
+  font-size: 40px;
   letter-spacing: .12em;
   text-indent: .12em;
 }
-body.state-result .lead-sub { top: 456px; }
+
+body.state-result .lead-sub {
+  top: 426px;
+}
+
 /* エラーは文章が長くなるので、紙色の枠に収めて城の背景に負けないようにする */
-body.state-error .lead-title { top: 384px; font-size: 30px; }
+body.state-error .lead-title {
+  top: 384px;
+  font-size: 30px;
+}
+
 body.state-error .lead-sub {
   top: 434px;
   left: 132px;
@@ -270,7 +362,10 @@ body.state-error .lead-sub {
   background: rgba(246, 242, 236, .93);
   border: 1px solid rgba(185, 154, 85, .55);
 }
-body.state-error .lead-title { color: var(--danger); }
+
+body.state-error .lead-title {
+  color: var(--danger);
+}
 
 /* タップ領域（魔法陣とリボンを覆う透明なボタン） */
 .draw-hit {
@@ -284,7 +379,10 @@ body.state-error .lead-title { color: var(--danger); }
   background: transparent;
   cursor: pointer;
 }
-.draw-hit:disabled { cursor: default; }
+
+.draw-hit:disabled {
+  cursor: default;
+}
 
 /* ---------------------------------------------- 設定パネル */
 
@@ -300,7 +398,10 @@ body.state-error .lead-title { color: var(--danger); }
   z-index: 20;
 }
 
-.settings[hidden], .preview[hidden] { display: none; }
+.settings[hidden],
+.preview[hidden] {
+  display: none;
+}
 
 .settings {
   position: fixed;
@@ -313,6 +414,7 @@ body.state-error .lead-title { color: var(--danger); }
   padding: 4vh 4vw;
   overflow: auto;
 }
+
 .settings__panel {
   width: min(580px, 100%);
   max-height: 92vh;
@@ -324,6 +426,7 @@ body.state-error .lead-title { color: var(--danger); }
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--ink);
 }
+
 .settings__panel h2 {
   margin: 0 0 18px;
   font-family: var(--mincho);
@@ -331,13 +434,19 @@ body.state-error .lead-title { color: var(--danger); }
   letter-spacing: .2em;
   color: var(--ink);
 }
-.field { display: block; margin-bottom: 14px; }
-.field > span {
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field>span {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
   color: #5b6070;
 }
+
 .field input[type="text"],
 .field input[type="number"],
 .field select {
@@ -348,11 +457,30 @@ body.state-error .lead-title { color: var(--danger); }
   background: rgba(255, 255, 255, .7);
   color: var(--ink);
 }
-.field-row { display: flex; gap: 12px; }
-.field-row .field { flex: 1; }
-.field--check { display: flex; align-items: center; gap: 10px; }
-.field--check > span { margin: 0; }
-.field--check input { width: 20px; height: 20px; }
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.field--check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field--check>span {
+  margin: 0;
+}
+
+.field--check input {
+  width: 20px;
+  height: 20px;
+}
 
 .settings__info {
   margin: 4px 0 16px;
@@ -362,9 +490,21 @@ body.state-error .lead-title { color: var(--danger); }
   white-space: pre-wrap;
 }
 
-.history { margin-bottom: 16px; font-size: 13px; }
-.history summary { cursor: pointer; color: var(--ink); }
-.history__summary { margin: 10px 0 6px; color: #5b6070; }
+.history {
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.history summary {
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.history__summary {
+  margin: 10px 0 6px;
+  color: #5b6070;
+}
+
 .history__list {
   max-height: 190px;
   overflow: auto;
@@ -382,22 +522,34 @@ body.state-error .lead-title { color: var(--danger); }
   max-height: 26vh;
   overflow: auto;
 }
-.preview canvas { display: block; width: 100%; height: auto; }
 
-.settings__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.preview canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
-.primary-btn, .ghost-btn {
+.settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primary-btn,
+.ghost-btn {
   font-family: inherit;
   font-size: 15px;
   letter-spacing: .08em;
   padding: 11px 20px;
   cursor: pointer;
 }
+
 .primary-btn {
   border: 1px solid var(--gold);
   background: rgba(185, 154, 85, .18);
   color: var(--ink);
 }
+
 .ghost-btn {
   border: 1px solid rgba(22, 34, 74, .3);
   background: transparent;
@@ -405,8 +557,12 @@ body.state-error .lead-title { color: var(--danger); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #ring, body.state-drawing #ring, body.state-drawing #core,
-  body.state-drawing .ring-echo, body.state-result #core {
+
+  #ring,
+  body.state-drawing #ring,
+  body.state-drawing #core,
+  body.state-drawing .ring-echo,
+  body.state-result #core {
     animation: none;
   }
 }

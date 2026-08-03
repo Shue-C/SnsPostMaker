@@ -1,139 +1,142 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="西洋魔法おみくじ">
-<meta name="format-detection" content="telephone=no">
-<title>西洋魔法おみくじ｜Ceria fi Ixtigna</title>
-<link rel="stylesheet" href="css/fonts.css">
-<link rel="stylesheet" href="css/assets.css">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="精霊魔法おみくじ">
+  <meta name="format-detection" content="telephone=no">
+  <title>精霊魔法おみくじ｜Ceria fi Ixtigna</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/assets.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="state-idle">
 
-<div class="viewport">
-  <div class="canvas" id="canvas">
+  <div class="viewport">
+    <div class="canvas" id="canvas">
 
-    <!-- 外周の飾り枠 -->
-    <i class="edge edge-top"></i>
-    <i class="edge edge-left"></i>
-    <i class="edge edge-right"></i>
-    <i class="deco a-corner-tl"></i>
-    <i class="deco a-corner-tr"></i>
+      <!-- 外周の飾り枠 -->
+      <i class="edge edge-top"></i>
+      <i class="edge edge-left"></i>
+      <i class="edge edge-right"></i>
+      <i class="deco a-corner-tl"></i>
+      <i class="deco a-corner-tr"></i>
 
-    <!-- ヘッダー -->
-    <p class="eyebrow eyebrow--l">ARCANE FORTUNE</p>
-    <p class="eyebrow eyebrow--r">ORACLE OF FATE</p>
-    <i class="deco a-rule-small"></i>
-    <i class="deco a-rule-small mirror-x"></i>
-    <i class="deco a-emblem-top"></i>
-
-    <i class="deco a-star"></i>
-    <i class="deco a-star mirror-x"></i>
-    <h1 class="title">西洋魔法おみくじ</h1>
-    <p class="subtitle">— Omikuji of Western Magic —</p>
-    <i class="deco a-divider"></i>
-
-    <!-- 案内文（状態によって差し替わる） -->
-    <i class="deco a-cloud"></i>
-    <i class="deco a-cloud mirror-x"></i>
-    <h2 class="lead-title" id="lead-title">魔法のおみくじを引いてみましょう</h2>
-    <p class="lead-sub" id="lead-sub">あなたの運命を導く、魔法の言葉。<br>心を静めて、下のクリスタルをタップしてください。</p>
-
-    <!-- 中央：城の背景と魔法陣 -->
-    <i class="deco a-bg-castles"></i>
-    <i class="deco a-sigil-ring" id="ring"></i>
-    <i class="deco a-sigil-ring ring-echo" id="ring-echo"></i>
-    <i class="deco a-sigil-core" id="core"></i>
-    <i class="deco a-ribbon" id="ribbon"></i>
-    <button class="draw-hit" id="draw-btn" type="button" aria-label="おみくじを引く"></button>
-
-    <!-- フッター（カード一覧を外したぶん、まとめて上に寄せている） -->
-    <div class="footer-group">
-      <i class="deco a-star fstar--l"></i>
-      <i class="deco a-star fstar--r"></i>
-      <p class="footer-phrase">魔法はいつも、あなたのそばに。</p>
-      <p class="footer-left">© 2026 Ceria fi Ixtigna</p>
-      <p class="footer-right">Designed with ✦ for magic lovers.</p>
+      <!-- ヘッダー -->
+      <p class="eyebrow eyebrow--l">ARCANE FORTUNE</p>
+      <p class="eyebrow eyebrow--r">ORACLE OF FATE</p>
+      <i class="deco a-rule-small"></i>
+      <i class="deco a-rule-small mirror-x"></i>
       <i class="deco a-emblem-bottom"></i>
-      <i class="edge edge-bottom"></i>
-      <i class="deco a-corner-bl"></i>
-      <i class="deco a-corner-br"></i>
-    </div>
 
-  </div>
-</div>
+      <i class="deco a-star"></i>
+      <i class="deco a-star mirror-x"></i>
+      <h1 class="title">精霊魔法おみくじ</h1>
+      <p class="subtitle">— Omikuji of Western Magic —</p>
+      <i class="deco a-divider"></i>
 
-<!-- 設定パネルを開く隠しボタン（右上を1.5秒長押し） -->
-<button id="settings-toggle" class="settings-toggle" type="button" aria-label="設定を開く"></button>
+      <!-- 案内文（状態によって差し替わる） -->
+      <i class="deco a-cloud"></i>
+      <i class="deco a-cloud mirror-x"></i>
+      <h2 class="lead-title" id="lead-title">魔法のおみくじを引いてみましょう</h2>
+      <p class="lead-sub" id="lead-sub">あなたの運命を導く、魔法の言葉。<br>心を静めて、下のクリスタルをタップしてください。</p>
 
-<div id="settings" class="settings" hidden>
-  <div class="settings__panel" role="dialog" aria-label="設定">
-    <h2>設定</h2>
+      <!-- 中央：城の背景と魔法陣 -->
+      <i class="deco a-bg-castles"></i>
+      <i class="deco a-sigil-ring" id="ring"></i>
+      <i class="deco a-sigil-ring ring-echo" id="ring-echo"></i>
+      <i class="deco a-sigil-core" id="core"></i>
+      <i class="deco a-ribbon" id="ribbon"></i>
+      <button class="draw-hit" id="draw-btn" type="button" aria-label="おみくじを引く"></button>
 
-    <label class="field">
-      <span>印刷方式</span>
-      <select id="set-backend">
-        <option value="mock">モック（印刷しない・動作確認用）</option>
-        <option value="sdk">ePOS SDK（推奨）</option>
-        <option value="xml">ePOS-Print XML 直接送信</option>
-      </select>
-    </label>
+      <!-- フッター（カード一覧を外したぶん、まとめて上に寄せている） -->
+      <div class="footer-group">
+        <i class="deco a-star fstar--l"></i>
+        <i class="deco a-star fstar--r"></i>
+        <p class="footer-phrase">魔法はいつも、あなたのそばに。</p>
+        <p class="footer-left">© Ceria fi Ixtigna</p>
+        <p class="footer-right">Designed with ✦ for magic lovers.</p>
+        <i class="edge edge-bottom"></i>
+        <i class="deco a-corner-bl"></i>
+        <i class="deco a-corner-br"></i>
+      </div>
 
-    <label class="field">
-      <span>プリンターのIPアドレス</span>
-      <input id="set-host" type="text" inputmode="decimal" autocomplete="off" placeholder="192.168.0.100">
-    </label>
-
-    <div class="field-row">
-      <label class="field">
-        <span>SDKポート</span>
-        <input id="set-sdk-port" type="number" inputmode="numeric">
-      </label>
-      <label class="field">
-        <span>XMLポート</span>
-        <input id="set-xml-port" type="number" inputmode="numeric">
-      </label>
-    </div>
-
-    <label class="field field--check">
-      <input id="set-invert" type="checkbox">
-      <span>白黒を反転して印刷する</span>
-    </label>
-
-    <p id="settings-info" class="settings__info"></p>
-
-    <details class="history">
-      <summary>おみくじの履歴</summary>
-      <p id="history-summary" class="history__summary"></p>
-      <ol id="history-list" class="history__list"></ol>
-      <button id="set-clear-history" class="ghost-btn" type="button">履歴を消去</button>
-    </details>
-
-    <div id="preview" class="preview" hidden></div>
-
-    <div class="settings__actions">
-      <button id="set-test" class="ghost-btn" type="button">テスト印刷</button>
-      <button id="set-reset-bag" class="ghost-btn" type="button">抽選をリセット</button>
-      <button id="set-save" class="primary-btn" type="button">保存して再読み込み</button>
-      <button id="set-close" class="ghost-btn" type="button">閉じる</button>
     </div>
   </div>
-</div>
 
-<!--
+  <!-- 設定パネルを開く隠しボタン（右上を1.5秒長押し） -->
+  <button id="settings-toggle" class="settings-toggle" type="button" aria-label="設定を開く"></button>
+
+  <div id="settings" class="settings" hidden>
+    <div class="settings__panel" role="dialog" aria-label="設定">
+      <h2>設定</h2>
+
+      <label class="field">
+        <span>印刷方式</span>
+        <select id="set-backend">
+          <option value="mock">モック（印刷しない・動作確認用）</option>
+          <option value="sdk">ePOS SDK（推奨）</option>
+          <option value="xml">ePOS-Print XML 直接送信</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>プリンターのIPアドレス</span>
+        <input id="set-host" type="text" inputmode="decimal" autocomplete="off" placeholder="192.168.0.100">
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span>SDKポート</span>
+          <input id="set-sdk-port" type="number" inputmode="numeric">
+        </label>
+        <label class="field">
+          <span>XMLポート</span>
+          <input id="set-xml-port" type="number" inputmode="numeric">
+        </label>
+      </div>
+
+      <label class="field field--check">
+        <input id="set-invert" type="checkbox">
+        <span>白黒を反転して印刷する</span>
+      </label>
+
+      <p id="settings-info" class="settings__info"></p>
+
+      <details class="history">
+        <summary>おみくじの履歴</summary>
+        <p id="history-summary" class="history__summary"></p>
+        <ol id="history-list" class="history__list"></ol>
+        <button id="set-clear-history" class="ghost-btn" type="button">履歴を消去</button>
+      </details>
+
+      <div id="preview" class="preview" hidden></div>
+
+      <div class="settings__actions">
+        <button id="set-test" class="ghost-btn" type="button">テスト印刷</button>
+        <button id="set-reset-bag" class="ghost-btn" type="button">抽選をリセット</button>
+        <button id="set-save" class="primary-btn" type="button">保存して再読み込み</button>
+        <button id="set-close" class="ghost-btn" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!--
   実機で印刷する（backend: 'sdk'）場合は、Epson ePOS SDK for JavaScript に含まれる
   epos-2.js を omikuji/js/ に置いて、次の行のコメントを外してください。
 -->
-<!-- <script src="js/epos-2.js"></script> -->
+  <!-- <script src="js/epos-2.js"></script> -->
 
-<script src="js/config.js"></script>
-<script src="js/raster.js"></script>
-<script src="js/printer.js"></script>
-<script src="js/draw.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/raster.js"></script>
+  <script src="js/printer.js"></script>
+  <script src="js/draw.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>
