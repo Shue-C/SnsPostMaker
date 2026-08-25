@@ -77,17 +77,17 @@ window.OMIKUJI_CONFIG = {
    * label は画面表示とログにしか使わないので、自由に書き換えて構いません。
    */
   items: [
-    { id: '01', label: 'おみくじ 01', image: 'images/01.png', weight: 1 },
-    { id: '02', label: 'おみくじ 02', image: 'images/02.png', weight: 1 },
-    { id: '03', label: 'おみくじ 03', image: 'images/03.png', weight: 1 },
-    { id: '04', label: 'おみくじ 04', image: 'images/04.png', weight: 1 },
-    { id: '05', label: 'おみくじ 05', image: 'images/05.png', weight: 1 },
-    { id: '06', label: 'おみくじ 06', image: 'images/06.png', weight: 1 },
-    { id: '07', label: 'おみくじ 07', image: 'images/07.png', weight: 1 },
-    { id: '08', label: 'おみくじ 08', image: 'images/08.png', weight: 1 },
-    { id: '09', label: 'おみくじ 09', image: 'images/09.png', weight: 1 },
-    { id: '10', label: 'おみくじ 10', image: 'images/10.png', weight: 1 },
-    { id: '11', label: 'おみくじ 11', image: 'images/11.png', weight: 1 },
-    { id: '12', label: 'おみくじ 12', image: 'images/12.png', weight: 1 }
+    { id: '01', label: 'おみくじ Ⅰ', image: 'images/01.png', weight: 1 },
+    { id: '02', label: 'おみくじ Ⅱ', image: 'images/02.png', weight: 1 },
+    { id: '03', label: 'おみくじ Ⅲ', image: 'images/03.png', weight: 1 },
+    { id: '04', label: 'おみくじ Ⅳ', image: 'images/04.png', weight: 1 },
+    { id: '05', label: 'おみくじ Ⅴ', image: 'images/05.png', weight: 1 },
+    { id: '06', label: 'おみくじ Ⅵ', image: 'images/06.png', weight: 1 },
+    { id: '07', label: 'おみくじ Ⅶ', image: 'images/07.png', weight: 1 },
+    { id: '08', label: 'おみくじ Ⅷ', image: 'images/08.png', weight: 1 },
+    { id: '09', label: 'おみくじ Ⅸ', image: 'images/09.png', weight: 1 },
+    { id: '10', label: 'おみくじ Ⅹ', image: 'images/10.png', weight: 1 },
+    { id: '11', label: 'おみくじ Ⅺ', image: 'images/11.png', weight: 1 },
+    { id: '12', label: 'おみくじ Ⅻ', image: 'images/12.png', weight: 1 }
   ]
 };
