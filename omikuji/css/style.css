@@ -45,9 +45,15 @@ body {
 
 /* ---------------------------------------------- 原画の座標系を画面に合わせる */
 
+/* --vw / --vh は app.js が visualViewport の実寸から入れる。
+   ファイルアプリのプレビューなど viewport 指定が効かない環境でも、
+   実際に見えている範囲に収まるようにするため。 */
 .viewport {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: var(--vw, 100vw);
+  height: var(--vh, 100vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,9 +393,9 @@ body.state-error .lead-title {
 /* ---------------------------------------------- 設定パネル */
 
 .settings-toggle {
-  position: fixed;
+  position: absolute;
   top: 0;
-  right: 0;
+  left: 948px;
   width: 76px;
   height: 76px;
   border: none;
@@ -405,7 +411,10 @@ body.state-error .lead-title {
 
 .settings {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: var(--vw, 100vw);
+  height: var(--vh, 100vh);
   z-index: 30;
   display: flex;
   align-items: center;
@@ -417,7 +426,7 @@ body.state-error .lead-title {
 
 .settings__panel {
   width: min(580px, 100%);
-  max-height: 92vh;
+  max-height: calc(var(--vh, 100vh) - 8vh);
   overflow: auto;
   background: var(--paper) url('../assets/paper.png') repeat;
   border: 1px solid rgba(185, 154, 85, .8);

@@ -66,11 +66,13 @@
         <i class="deco a-corner-br"></i>
       </div>
 
+      <!-- 設定パネルを開く隠しボタン（右上を1.5秒長押し）。
+           画面ではなくキャンバスの隅に置く。ファイルアプリのプレビューのように
+           viewport 指定が効かない環境でも、必ず見えている位置に来るようにするため。 -->
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="設定を開く"></button>
+
     </div>
   </div>
-
-  <!-- 設定パネルを開く隠しボタン（右上を1.5秒長押し） -->
-  <button id="settings-toggle" class="settings-toggle" type="button" aria-label="設定を開く"></button>
 
   <div id="settings" class="settings" hidden>
     <div class="settings__panel" role="dialog" aria-label="設定">

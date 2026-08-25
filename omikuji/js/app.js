@@ -51,14 +51,32 @@
 
   // ------------------------------------------------------------ 画面サイズ
 
+  /**
+   * 実際に見えている領域の大きさ。
+   * ファイルアプリのプレビューなど viewport 指定が無視される環境では
+   * innerWidth が実寸と食い違うので、visualViewport を優先して使う。
+   */
+  function viewportSize() {
+    var vv = global.visualViewport;
+    if (vv && vv.width && vv.height) return { w: vv.width, h: vv.height };
+    var de = document.documentElement;
+    return {
+      w: global.innerWidth || de.clientWidth,
+      h: global.innerHeight || de.clientHeight
+    };
+  }
+
   function fitCanvas() {
+    var view = viewportSize();
+    var root = document.documentElement.style;
+    root.setProperty('--vw', view.w + 'px');
+    root.setProperty('--vh', view.h + 'px');
     // キャンバスの実寸（CSS側の width/height）から倍率を出すので、
     // レイアウトを詰めてもここを直す必要はない。
     var w = el.canvas.offsetWidth;
     var h = el.canvas.offsetHeight;
     if (!w || !h) return;
-    el.canvas.style.setProperty('--s', Math.min(global.innerWidth / w,
-                                                global.innerHeight / h));
+    el.canvas.style.setProperty('--s', Math.min(view.w / w, view.h / h));
   }
 
   // ------------------------------------------------------------ 設定
@@ -376,6 +394,14 @@
     fitCanvas();
     global.addEventListener('resize', fitCanvas);
     global.addEventListener('orientationchange', fitCanvas);
+    if (global.visualViewport) {
+      global.visualViewport.addEventListener('resize', fitCanvas);
+      global.visualViewport.addEventListener('scroll', fitCanvas);
+    }
+    // 表示直後は実寸が確定していないことがあるので、少し置いてもう一度測る
+    // （抽選時に clearTimers されないよう later() は使わない）
+    setTimeout(fitCanvas, 300);
+    setTimeout(fitCanvas, 1200);
 
     el.drawBtn.addEventListener('click', onDraw);
     el.drawBtn.addEventListener('touchstart', function () {
