@@ -464,6 +464,30 @@ body {
   touch-action: manipulation;
 }
 
+/* JavaScript が動いていないときだけ出る案内。app.js が起動時に消す。 */
+.nojs {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 50;
+  padding: 18px 20px;
+  background: #7c1f1a;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.nojs p {
+  margin: 0 0 6px;
+}
+
+.nojs p:last-child {
+  margin-bottom: 0;
+  font-size: 15px;
+}
+
 /* ---------------------------------------------- 原画の座標系を画面に合わせる */
 
 /* --vw / --vh は app.js が visualViewport の実寸から入れる。
@@ -1000,6 +1024,16 @@ body.state-error .lead-title {
 </head>
 
 <body class="state-idle">
+
+  <!-- JavaScript が動いていれば app.js が消す。
+       ファイルアプリのプレビューのようにスクリプトが実行されない環境では
+       これが出たままになるので、その場で原因が分かる。 -->
+  <div id="nojs" class="nojs">
+    <p><strong>JavaScript が実行されていません</strong></p>
+    <p>この表示が出ている間は、おみくじを引くことも画面を画面幅に合わせることもできません。
+      ファイルアプリのプレビューで開いている場合はこの状態になります。
+      Webサーバー経由（http://…）で開いてください。</p>
+  </div>
 
   <div class="viewport">
     <div class="canvas" id="canvas">
@@ -2236,6 +2270,10 @@ window.OMIKUJI_CONFIG = {
       saveJson(HISTORY_KEY, []);
       renderHistory();
     });
+
+    // JavaScript が動いている証拠。動かない環境では出たままになる。
+    var nojs = document.getElementById('nojs');
+    if (nojs && nojs.parentNode) nojs.parentNode.removeChild(nojs);
 
     goIdle();
     preloadAll();

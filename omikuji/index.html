@@ -17,6 +17,16 @@
 
 <body class="state-idle">
 
+  <!-- JavaScript が動いていれば app.js が消す。
+       ファイルアプリのプレビューのようにスクリプトが実行されない環境では
+       これが出たままになるので、その場で原因が分かる。 -->
+  <div id="nojs" class="nojs">
+    <p><strong>JavaScript が実行されていません</strong></p>
+    <p>この表示が出ている間は、おみくじを引くことも画面を画面幅に合わせることもできません。
+      ファイルアプリのプレビューで開いている場合はこの状態になります。
+      Webサーバー経由（http://…）で開いてください。</p>
+  </div>
+
   <div class="viewport">
     <div class="canvas" id="canvas">
 

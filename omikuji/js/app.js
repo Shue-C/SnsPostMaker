@@ -434,6 +434,10 @@
       renderHistory();
     });
 
+    // JavaScript が動いている証拠。動かない環境では出たままになる。
+    var nojs = document.getElementById('nojs');
+    if (nojs && nojs.parentNode) nojs.parentNode.removeChild(nojs);
+
     goIdle();
     preloadAll();
     keepAwake();

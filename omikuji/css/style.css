@@ -43,6 +43,30 @@ body {
   touch-action: manipulation;
 }
 
+/* JavaScript が動いていないときだけ出る案内。app.js が起動時に消す。 */
+.nojs {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 50;
+  padding: 18px 20px;
+  background: #7c1f1a;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.nojs p {
+  margin: 0 0 6px;
+}
+
+.nojs p:last-child {
+  margin-bottom: 0;
+  font-size: 15px;
+}
+
 /* ---------------------------------------------- 原画の座標系を画面に合わせる */
 
 /* --vw / --vh は app.js が visualViewport の実寸から入れる。
