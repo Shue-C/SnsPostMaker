@@ -234,14 +234,7 @@
               '&timeout=' + p.timeout;
 
     return withTimeout(
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '""' },
-        body: envelope
-      }).then(function (res) {
-        if (!res.ok) throw new Error('プリンターがHTTP ' + res.status + ' を返しました');
-        return res.text();
-      }).then(function (text) {
+      postXml(url, envelope).then(function (text) {
         var doc = new DOMParser().parseFromString(text, 'text/xml');
         var response = doc.getElementsByTagName('response')[0];
         if (!response) throw new Error('プリンターの応答を解釈できませんでした');
@@ -253,6 +246,39 @@
       '印刷応答がタイムアウトしました'
     );
   };
+
+  /**
+   * ePOS-Print XML を送る。fetch が使えない環境（file:// で開いた場合など）が
+   * あるので、失敗したら XMLHttpRequest でもう一度試す。
+   */
+  function postXml(url, body) {
+    var headers = { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '""' };
+    var viaXhr = function () {
+      return new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        Object.keys(headers).forEach(function (k) { xhr.setRequestHeader(k, headers[k]); });
+        xhr.onload = function () {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
+          else reject(new Error('プリンターがHTTP ' + xhr.status + ' を返しました'));
+        };
+        xhr.onerror = function () {
+          reject(new Error('プリンターに送信できませんでした（ブラウザに通信を拒否されました）'));
+        };
+        xhr.send(body);
+      });
+    };
+    if (typeof fetch !== 'function') return viaXhr();
+    return fetch(url, { method: 'POST', headers: headers, body: body })
+      .then(function (res) {
+        if (!res.ok) throw new Error('プリンターがHTTP ' + res.status + ' を返しました');
+        return res.text();
+      })
+      .catch(function (err) {
+        // fetch がブラウザの制限で弾かれた場合に備えてもう一度
+        return viaXhr().catch(function () { throw err; });
+      });
+  }
 
   function escapeXml(s) {
     return String(s)

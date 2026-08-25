@@ -43,6 +43,10 @@
   var missingImages = [];
   var busy = false;
   var errorAt = 0;
+  // localStorage が使えない環境（file:// で開いた場合など）でも設定を変えられるよう、
+  // 保存できなかった内容はこの変数に持っておく。
+  var sessionOverrides = null;
+  var backendHooks = null;
   var timers = [];
 
   // ------------------------------------------------------------ 画面サイズ
@@ -77,9 +81,13 @@
     }
   }
 
+  function overrides() {
+    return sessionOverrides || loadJson(SETTINGS_KEY, {});
+  }
+
   function buildConfig() {
     var base = JSON.parse(JSON.stringify(global.OMIKUJI_CONFIG));
-    var ov = loadJson(SETTINGS_KEY, {});
+    var ov = overrides();
     if (ov.backend) base.backend = ov.backend;
     if (ov.host) base.printer.host = ov.host;
     if (ov.sdkPort) base.printer.sdkPort = Number(ov.sdkPort);
@@ -251,7 +259,7 @@
   // ------------------------------------------------------------ 設定UI
 
   function openSettings() {
-    var ov = loadJson(SETTINGS_KEY, {});
+    var ov = overrides();
     el.setBackend.value = cfg.backend;
     el.setHost.value = cfg.printer.host;
     el.setSdkPort.value = cfg.printer.sdkPort;
@@ -277,19 +285,24 @@
     el.settings.hidden = false;
   }
 
+  /**
+   * 設定を反映する。保存できた場合もできなかった場合も、その場で
+   * 接続先を作り直して効かせる（再読み込みしないので file:// でも使える）。
+   */
   function saveSettings() {
-    var ok = saveJson(SETTINGS_KEY, {
+    sessionOverrides = {
       backend: el.setBackend.value,
       host: el.setHost.value.trim(),
       sdkPort: Number(el.setSdkPort.value) || undefined,
       xmlPort: Number(el.setXmlPort.value) || undefined,
       invertBits: el.setInvert.checked
-    });
-    if (!ok) {
-      alert('設定を保存できませんでした（プライベートブラウズ中かもしれません）');
-      return;
-    }
-    global.location.reload();
+    };
+    var stored = saveJson(SETTINGS_KEY, sessionOverrides);
+    cfg = buildConfig();
+    backend = global.PrinterBackend.create(cfg, backendHooks);
+    el.settingsInfo.textContent = stored
+      ? '設定を反映しました。'
+      : '設定を反映しました（この端末には保存できないため、次回起動時は既定値に戻ります）。';
   }
 
   function testPrint() {
@@ -347,7 +360,7 @@
 
     cfg = buildConfig();
     drawer = new global.Drawer(cfg.items, cfg.draw.mode);
-    backend = global.PrinterBackend.create(cfg, {
+    backendHooks = {
       onPreview: function (canvas) {
         var copy = document.createElement('canvas');
         copy.width = canvas.width;
@@ -357,7 +370,8 @@
         el.preview.appendChild(copy);
         el.preview.hidden = false;
       }
-    });
+    };
+    backend = global.PrinterBackend.create(cfg, backendHooks);
 
     fitCanvas();
     global.addEventListener('resize', fitCanvas);
