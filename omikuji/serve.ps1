@@ -13,7 +13,10 @@
 
 param(
   [int]$Port = 8080,
-  [switch]$NoFirewall
+  [switch]$NoFirewall,
+  # このPCのブラウザからしか開かない場合に指定する。
+  # localhost だけで待ち受けるので、管理者権限もファイアウォール設定も要らない。
+  [switch]$LocalOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,7 +27,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 # それでは iPad から見えない）。
 $identity  = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not $LocalOnly -and -not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   Write-Host '管理者権限で起動し直します...' -ForegroundColor Yellow
   $psArgs = @(
     '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -46,7 +49,7 @@ if (-not (Test-Path (Join-Path $Root 'index.html'))) {
 
 # --- ファイアウォールの穴あけ（プライベートネットワークのみ） -------------
 $ruleName = "Omikuji Kiosk HTTP $Port"
-if (-not $NoFirewall) {
+if (-not $NoFirewall -and -not $LocalOnly) {
   try {
     $existing = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
     if (-not $existing) {
@@ -83,7 +86,12 @@ $mime = @{
 
 # --- 待ち受け開始 --------------------------------------------------------
 $listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://+:$Port/")
+if ($LocalOnly) {
+  # localhost 限定なら管理者権限は不要
+  $listener.Prefixes.Add("http://localhost:$Port/")
+} else {
+  $listener.Prefixes.Add("http://+:$Port/")
+}
 try {
   $listener.Start()
 } catch {
@@ -94,16 +102,18 @@ try {
   exit 1
 }
 
-# 自分の IPv4 アドレスを列挙（iPad から開く URL を案内するため）
+# 自分の IPv4 アドレスを列挙（他の端末から開く URL を案内するため）
 $addrs = @()
-try {
-  $addrs = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-    Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.PrefixOrigin -ne 'WellKnown' } |
-    Select-Object -ExpandProperty IPAddress)
-} catch {
-  $addrs = @([System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) |
-    Where-Object { $_.AddressFamily -eq 'InterNetwork' } |
-    ForEach-Object { $_.IPAddressToString })
+if (-not $LocalOnly) {
+  try {
+    $addrs = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+      Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.PrefixOrigin -ne 'WellKnown' } |
+      Select-Object -ExpandProperty IPAddress)
+  } catch {
+    $addrs = @([System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) |
+      Where-Object { $_.AddressFamily -eq 'InterNetwork' } |
+      ForEach-Object { $_.IPAddressToString })
+  }
 }
 
 Write-Host ''
@@ -112,15 +122,21 @@ Write-Host '  精霊魔法おみくじ  配信中' -ForegroundColor Cyan
 Write-Host '============================================================'
 Write-Host "  公開フォルダ : $Root"
 Write-Host ''
-Write-Host '  iPad の Safari で次のどれかを開いてください:'
-foreach ($a in $addrs) {
-  if ($a -like '192.168.137.*') {
-    Write-Host "    http://${a}:$Port/    ← モバイルホットスポット" -ForegroundColor Green
-  } else {
-    Write-Host "    http://${a}:$Port/" -ForegroundColor Green
+if ($LocalOnly) {
+  Write-Host '  このPCのブラウザで次を開いてください:'
+  Write-Host "    http://localhost:$Port/" -ForegroundColor Green
+  Write-Host '    （localhost 限定で待ち受けています。他の端末からは開けません）' -ForegroundColor DarkGray
+} else {
+  Write-Host '  iPad の Safari で次のどれかを開いてください:'
+  foreach ($a in $addrs) {
+    if ($a -like '192.168.137.*') {
+      Write-Host "    http://${a}:$Port/    ← モバイルホットスポット" -ForegroundColor Green
+    } else {
+      Write-Host "    http://${a}:$Port/" -ForegroundColor Green
+    }
   }
+  if ($addrs.Count -eq 0) { Write-Host '    （IPアドレスを取得できませんでした）' -ForegroundColor Yellow }
 }
-if ($addrs.Count -eq 0) { Write-Host '    （IPアドレスを取得できませんでした）' -ForegroundColor Yellow }
 Write-Host ''
 Write-Host '  終了するには Ctrl+C'
 Write-Host '============================================================'
