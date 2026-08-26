@@ -1,9 +1,10 @@
 /**
  * 印刷バックエンド。
  *
- *   sdk  … Epson ePOS SDK for JavaScript（epos-2.js）経由。実機運用の推奨経路。
- *   xml  … ePOS-Print XML を直接HTTP POSTする。SDKを配置せずに動かしたいとき用。
- *   mock … 印刷せず画面にプレビューするだけ。プリンター無しでの動作確認用。
+ *   sdk     … Epson ePOS SDK for JavaScript（epos-2.js）経由。ネットワーク接続時の推奨経路。
+ *   xml     … ePOS-Print XML を直接HTTP POSTする。SDKを配置せずに動かしたいとき用。
+ *   windows … Windowsのプリンタードライバー経由（window.print）。USB接続で使える。
+ *   mock    … 印刷せず画面にプレビューするだけ。プリンター無しでの動作確認用。
  *
  * どのバックエンドも共通で以下を持つ:
  *   ensureReady() -> Promise<void>
@@ -286,12 +287,112 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
+  // ------------------------------------------------------------- windows
+
+  /**
+   * Windowsのプリンタードライバー経由で刷る。
+   *
+   * ネットワークを一切使わないので、USBケーブル1本で完結する。
+   * プリンター内蔵のWebサービス（ePOS-Print）はEthernet側にしか出ていないため、
+   * USB接続で刷るにはこの経路しかない。
+   *
+   * 絵はラスター送信と同じ Floyd–Steinberg で2値化してから貼る。
+   * ドライバー任せの網点にすると絵柄が潰れるため。
+   */
+  function WindowsBackend(cfg, hooks) {
+    this.cfg = cfg;
+    this.hooks = hooks || {};
+  }
+
+  WindowsBackend.prototype.describe = function () {
+    return 'Windowsのプリンタードライバー（USB接続）';
+  };
+
+  WindowsBackend.prototype.ensureReady = function () {
+    if (typeof global.print !== 'function') {
+      return Promise.reject(new Error('このブラウザでは印刷機能を使えません'));
+    }
+    return Promise.resolve();
+  };
+
+  WindowsBackend.prototype.printCanvas = function (canvas, printCfg) {
+    var self = this;
+    var sheet = document.getElementById('print-sheet');
+    if (!sheet) return Promise.reject(new Error('印刷用の領域が見つかりません（index.html を確認してください）'));
+
+    var mono = global.Raster.toMonoCanvas(canvas, {
+      threshold: printCfg.threshold,
+      invert: printCfg.invertBits
+    });
+
+    // 印字幅は mm で指定する。576ドット ÷ 203dpi = 72mm がTM-m30の80mm紙の印字幅。
+    var widthMm = printCfg.paperWidthMm || 72;
+    var sheetMm = printCfg.paperSizeMm || 80;   // ロール紙そのものの幅
+    // 印字後の紙送り（ドット）を mm に直して下余白にする
+    var padMm = (printCfg.feedUnitsAfter || 0) / 203 * 25.4;
+    // 用紙の長さは絵の高さから決める。
+    // CSS の @page は `size: 80mm auto` のような書き方ができない（無効になる）ので、
+    // 毎回ここで実寸を計算して差し込む。
+    var pageMm = mono.height * (widthMm / mono.width) + padMm;
+    setPageSize(sheetMm, pageMm);
+
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        sheet.innerHTML = '';
+        sheet.style.paddingBottom = padMm.toFixed(2) + 'mm';
+        img.style.width = widthMm + 'mm';
+        sheet.appendChild(img);
+
+        var done = false;
+        var timer = null;
+        var finish = function (err) {
+          if (done) return;
+          done = true;
+          global.removeEventListener('afterprint', onAfter);
+          if (timer) clearTimeout(timer);
+          sheet.innerHTML = '';
+          if (err) reject(err); else resolve();
+        };
+        var onAfter = function () { setTimeout(function () { finish(null); }, 200); };
+        global.addEventListener('afterprint', onAfter);
+
+        try {
+          // print() は印刷ジョブを投げ終わってから戻る
+          // （ダイアログが出る設定なら、閉じてから戻る）。
+          global.print();
+        } catch (e) {
+          finish(new Error('印刷を開始できませんでした: ' + e.message));
+          return;
+        }
+        // afterprint が飛ばない環境もあるので、戻ってきたら少し待って完了扱いにする
+        timer = setTimeout(function () { finish(null); }, 1200);
+      };
+      img.onerror = function () { reject(new Error('印刷用の画像を作れませんでした')); };
+      img.src = mono.toDataURL('image/png');
+    });
+  };
+
+  /** @page の用紙サイズを実寸で差し込む（レシートは1枚ごとに長さが変わるため）。 */
+  function setPageSize(widthMm, heightMm) {
+    var id = 'print-page-size';
+    var style = document.getElementById(id);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = id;
+      document.head.appendChild(style);
+    }
+    style.textContent = '@page { size: ' + widthMm.toFixed(2) + 'mm ' +
+                        heightMm.toFixed(2) + 'mm; margin: 0; }';
+  }
+
   // --------------------------------------------------------------- 生成
 
   function createBackend(cfg, hooks) {
     switch (cfg.backend) {
       case 'sdk': return new SdkBackend(cfg, hooks);
       case 'xml': return new XmlBackend(cfg, hooks);
+      case 'windows': return new WindowsBackend(cfg, hooks);
       case 'mock':
       default: return new MockBackend(cfg, hooks);
     }

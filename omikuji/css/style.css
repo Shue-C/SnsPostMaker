@@ -599,3 +599,45 @@ body.state-error .lead-title {
     animation: none;
   }
 }
+
+/* ---------------------------------------------- Windowsドライバー経由の印刷用
+ * backend: 'windows' のときだけ #print-sheet に2値化した画像が入る。
+ * 画面には出さず、印刷時だけそれ1枚を出す。
+ * 幅は px ではなく mm で指定すること。576ドット ÷ 203dpi = 72mm。
+ */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  /* 用紙サイズは printer.js が実寸で差し込む（#print-page-size）。
+     `size: 80mm auto` のような書き方はCSSとして無効なので使えない。 */
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  /* 画面用の要素はすべて隠す */
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+  }
+
+  .print-sheet img {
+    display: block;
+    margin: 0 auto;
+    height: auto;
+    /* 2値化済みなので、ブラウザに補間させない */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}

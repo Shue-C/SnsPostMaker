@@ -8,9 +8,10 @@
 window.OMIKUJI_CONFIG = {
   /**
    * 印刷方式
-   *   'mock' … 印刷せず画面にプレビューを出すだけ（プリンター無しで動作確認できる）
-   *   'sdk'  … Epson ePOS SDK for JavaScript 経由（推奨。epos-2.js が必要）
-   *   'xml'  … ePOS-Print XML を直接POST（SDKを置かずに使える代替手段）
+   *   'mock'    … 印刷せず画面にプレビューを出すだけ（プリンター無しで動作確認できる）
+   *   'sdk'     … Epson ePOS SDK for JavaScript 経由（LAN接続。epos-2.js が必要）
+   *   'xml'     … ePOS-Print XML を直接POST（LAN接続。SDKを置かずに使える代替手段）
+   *   'windows' … Windowsのプリンタードライバー経由（USB接続。IPアドレスの設定が要らない）
    */
   backend: 'mock',
 
@@ -44,6 +45,12 @@ window.OMIKUJI_CONFIG = {
     invertBits: false,    // 白黒が反転して印刷される場合に true にする
     feedUnitsAfter: 60,   // 印字後の紙送り量（ドット）。カット位置の調整用
     cut: true,
+
+    // backend: 'windows' 用。ミリで指定する。
+    // paperWidthMm … 印字幅。80mm紙 = 576ドット ÷ 203dpi = 72mm。58mm紙なら 52 前後。
+    // paperSizeMm  … ロール紙そのものの幅。80mm紙なら 80、58mm紙なら 58。
+    paperWidthMm: 72,
+    paperSizeMm: 80,
 
     // 画像の下に共通のフッターを刷る場合はここを有効にする
     footer: {

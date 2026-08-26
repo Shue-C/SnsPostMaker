@@ -77,11 +77,11 @@
   }
 
   /**
-   * canvas を 1bit ラスターに変換して base64 を返す。
-   * Floyd–Steinberg 誤差拡散でディザをかける。
-   * 出力は 1画素=1bit、MSB先頭、1行あたり width/8 バイト、1 が黒ドット。
+   * canvas を Floyd–Steinberg 誤差拡散で2値化し、
+   * 1画素1バイト（1 = 黒ドット）の Uint8Array を返す。
+   * ラスター送信用と、Windowsドライバー印刷用の両方がこれを使う。
    */
-  function toRasterBase64(canvas, options) {
+  function dither(canvas, options) {
     options = options || {};
     var threshold = typeof options.threshold === 'number' ? options.threshold : 128;
     var invert = !!options.invert;
@@ -101,8 +101,7 @@
       gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
     }
 
-    var bytesPerRow = w / 8;
-    var out = new Uint8Array(bytesPerRow * h);
+    var bits = new Uint8Array(w * h);
 
     for (var y = 0; y < h; y++) {
       for (var x = 0; x < w; x++) {
@@ -112,9 +111,7 @@
         var newVal = isBlack ? 0 : 255;
         var err = old - newVal;
 
-        if (isBlack !== invert) {
-          out[y * bytesPerRow + (x >> 3)] |= (0x80 >> (x & 7));
-        }
+        if (isBlack !== invert) bits[idx] = 1;
 
         // 誤差を右・左下・下・右下へ拡散
         if (x + 1 < w)              gray[idx + 1]         += err * 7 / 16;
@@ -126,7 +123,48 @@
       }
     }
 
+    return { width: w, height: h, bits: bits };
+  }
+
+  /**
+   * canvas を 1bit ラスターに変換して base64 を返す。
+   * 出力は 1画素=1bit、MSB先頭、1行あたり width/8 バイト、1 が黒ドット。
+   */
+  function toRasterBase64(canvas, options) {
+    var d = dither(canvas, options);
+    var w = d.width, h = d.height;
+    var bytesPerRow = w / 8;
+    var out = new Uint8Array(bytesPerRow * h);
+
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        if (d.bits[y * w + x]) out[y * bytesPerRow + (x >> 3)] |= (0x80 >> (x & 7));
+      }
+    }
+
     return { width: w, height: h, base64: bytesToBase64(out) };
+  }
+
+  /**
+   * canvas を白黒2値の canvas に変換して返す。
+   * Windowsのプリンタードライバー経由で刷るとき、ドライバー任せの網点ではなく
+   * ラスター送信と同じ絵を出すために使う。
+   */
+  function toMonoCanvas(canvas, options) {
+    var d = dither(canvas, options);
+    var out = document.createElement('canvas');
+    out.width = d.width;
+    out.height = d.height;
+    var ctx = out.getContext('2d');
+    var img = ctx.createImageData(d.width, d.height);
+    var px = img.data;
+    for (var i = 0, p = 0; i < d.bits.length; i++, p += 4) {
+      var v = d.bits[i] ? 0 : 255;
+      px[p] = px[p + 1] = px[p + 2] = v;
+      px[p + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    return out;
   }
 
   function bytesToBase64(bytes) {
@@ -158,6 +196,7 @@
     fitToWidth: fitToWidth,
     makePlaceholder: makePlaceholder,
     toRasterBase64: toRasterBase64,
+    toMonoCanvas: toMonoCanvas,
     renderItem: renderItem
   };
 })(window);

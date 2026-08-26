@@ -64,6 +64,7 @@ $edgeArgs = @(
   '--kiosk', $url,
   '--edge-kiosk-type=fullscreen',   # InPrivateにせず、通常プロファイルで全画面
   '--kiosk-idle-timeout-minutes=0', # 放置しても勝手にリセットさせない
+  '--kiosk-printing',               # 印刷ダイアログを出さず既定のプリンターへ直接刷る
   '--no-first-run',
   '--disable-features=msEdgeSplitScreen,msImplicitSignin'
 )

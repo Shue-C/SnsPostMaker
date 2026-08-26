@@ -1020,6 +1020,49 @@ body.state-error .lead-title {
     animation: none;
   }
 }
+
+/* ---------------------------------------------- Windowsドライバー経由の印刷用
+ * backend: 'windows' のときだけ #print-sheet に2値化した画像が入る。
+ * 画面には出さず、印刷時だけそれ1枚を出す。
+ * 幅は px ではなく mm で指定すること。576ドット ÷ 203dpi = 72mm。
+ */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  /* 用紙サイズは printer.js が実寸で差し込む（#print-page-size）。
+     `size: 80mm auto` のような書き方はCSSとして無効なので使えない。 */
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+
+  /* 画面用の要素はすべて隠す */
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+  }
+
+  .print-sheet img {
+    display: block;
+    margin: 0 auto;
+    height: auto;
+    /* 2値化済みなので、ブラウザに補間させない */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}
+
 </style>
 </head>
 
@@ -1100,8 +1143,9 @@ body.state-error .lead-title {
         <span>印刷方式</span>
         <select id="set-backend">
           <option value="mock">モック（印刷しない・動作確認用）</option>
-          <option value="sdk">ePOS SDK（推奨）</option>
-          <option value="xml">ePOS-Print XML 直接送信</option>
+          <option value="sdk">ePOS SDK（LAN接続・推奨）</option>
+          <option value="xml">ePOS-Print XML 直接送信（LAN接続）</option>
+          <option value="windows">Windowsのプリンタードライバー（USB接続）</option>
         </select>
       </label>
 
@@ -1146,6 +1190,10 @@ body.state-error .lead-title {
     </div>
   </div>
 
+  <!-- Windowsドライバー経由（backend: 'windows'）で刷るときだけ中身が入る。
+       画面には出ず、印刷時だけ @media print で表示される。 -->
+  <div id="print-sheet" class="print-sheet" aria-hidden="true"></div>
+
   <!-- -->
 <script>
 /* ===== js/config.js ===== */
@@ -1159,9 +1207,10 @@ body.state-error .lead-title {
 window.OMIKUJI_CONFIG = {
   /**
    * 印刷方式
-   *   'mock' … 印刷せず画面にプレビューを出すだけ（プリンター無しで動作確認できる）
-   *   'sdk'  … Epson ePOS SDK for JavaScript 経由（推奨。epos-2.js が必要）
-   *   'xml'  … ePOS-Print XML を直接POST（SDKを置かずに使える代替手段）
+   *   'mock'    … 印刷せず画面にプレビューを出すだけ（プリンター無しで動作確認できる）
+   *   'sdk'     … Epson ePOS SDK for JavaScript 経由（LAN接続。epos-2.js が必要）
+   *   'xml'     … ePOS-Print XML を直接POST（LAN接続。SDKを置かずに使える代替手段）
+   *   'windows' … Windowsのプリンタードライバー経由（USB接続。IPアドレスの設定が要らない）
    */
   backend: 'xml',
 
@@ -1195,6 +1244,12 @@ window.OMIKUJI_CONFIG = {
     invertBits: false,    // 白黒が反転して印刷される場合に true にする
     feedUnitsAfter: 60,   // 印字後の紙送り量（ドット）。カット位置の調整用
     cut: true,
+
+    // backend: 'windows' 用。ミリで指定する。
+    // paperWidthMm … 印字幅。80mm紙 = 576ドット ÷ 203dpi = 72mm。58mm紙なら 52 前後。
+    // paperSizeMm  … ロール紙そのものの幅。80mm紙なら 80、58mm紙なら 58。
+    paperWidthMm: 72,
+    paperSizeMm: 80,
 
     // 画像の下に共通のフッターを刷る場合はここを有効にする
     footer: {
@@ -1323,11 +1378,11 @@ window.OMIKUJI_CONFIG = {
   }
 
   /**
-   * canvas を 1bit ラスターに変換して base64 を返す。
-   * Floyd–Steinberg 誤差拡散でディザをかける。
-   * 出力は 1画素=1bit、MSB先頭、1行あたり width/8 バイト、1 が黒ドット。
+   * canvas を Floyd–Steinberg 誤差拡散で2値化し、
+   * 1画素1バイト（1 = 黒ドット）の Uint8Array を返す。
+   * ラスター送信用と、Windowsドライバー印刷用の両方がこれを使う。
    */
-  function toRasterBase64(canvas, options) {
+  function dither(canvas, options) {
     options = options || {};
     var threshold = typeof options.threshold === 'number' ? options.threshold : 128;
     var invert = !!options.invert;
@@ -1347,8 +1402,7 @@ window.OMIKUJI_CONFIG = {
       gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
     }
 
-    var bytesPerRow = w / 8;
-    var out = new Uint8Array(bytesPerRow * h);
+    var bits = new Uint8Array(w * h);
 
     for (var y = 0; y < h; y++) {
       for (var x = 0; x < w; x++) {
@@ -1358,9 +1412,7 @@ window.OMIKUJI_CONFIG = {
         var newVal = isBlack ? 0 : 255;
         var err = old - newVal;
 
-        if (isBlack !== invert) {
-          out[y * bytesPerRow + (x >> 3)] |= (0x80 >> (x & 7));
-        }
+        if (isBlack !== invert) bits[idx] = 1;
 
         // 誤差を右・左下・下・右下へ拡散
         if (x + 1 < w)              gray[idx + 1]         += err * 7 / 16;
@@ -1372,7 +1424,48 @@ window.OMIKUJI_CONFIG = {
       }
     }
 
+    return { width: w, height: h, bits: bits };
+  }
+
+  /**
+   * canvas を 1bit ラスターに変換して base64 を返す。
+   * 出力は 1画素=1bit、MSB先頭、1行あたり width/8 バイト、1 が黒ドット。
+   */
+  function toRasterBase64(canvas, options) {
+    var d = dither(canvas, options);
+    var w = d.width, h = d.height;
+    var bytesPerRow = w / 8;
+    var out = new Uint8Array(bytesPerRow * h);
+
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        if (d.bits[y * w + x]) out[y * bytesPerRow + (x >> 3)] |= (0x80 >> (x & 7));
+      }
+    }
+
     return { width: w, height: h, base64: bytesToBase64(out) };
+  }
+
+  /**
+   * canvas を白黒2値の canvas に変換して返す。
+   * Windowsのプリンタードライバー経由で刷るとき、ドライバー任せの網点ではなく
+   * ラスター送信と同じ絵を出すために使う。
+   */
+  function toMonoCanvas(canvas, options) {
+    var d = dither(canvas, options);
+    var out = document.createElement('canvas');
+    out.width = d.width;
+    out.height = d.height;
+    var ctx = out.getContext('2d');
+    var img = ctx.createImageData(d.width, d.height);
+    var px = img.data;
+    for (var i = 0, p = 0; i < d.bits.length; i++, p += 4) {
+      var v = d.bits[i] ? 0 : 255;
+      px[p] = px[p + 1] = px[p + 2] = v;
+      px[p + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    return out;
   }
 
   function bytesToBase64(bytes) {
@@ -1404,6 +1497,7 @@ window.OMIKUJI_CONFIG = {
     fitToWidth: fitToWidth,
     makePlaceholder: makePlaceholder,
     toRasterBase64: toRasterBase64,
+    toMonoCanvas: toMonoCanvas,
     renderItem: renderItem
   };
 })(window);
@@ -1412,9 +1506,10 @@ window.OMIKUJI_CONFIG = {
 /**
  * 印刷バックエンド。
  *
- *   sdk  … Epson ePOS SDK for JavaScript（epos-2.js）経由。実機運用の推奨経路。
- *   xml  … ePOS-Print XML を直接HTTP POSTする。SDKを配置せずに動かしたいとき用。
- *   mock … 印刷せず画面にプレビューするだけ。プリンター無しでの動作確認用。
+ *   sdk     … Epson ePOS SDK for JavaScript（epos-2.js）経由。ネットワーク接続時の推奨経路。
+ *   xml     … ePOS-Print XML を直接HTTP POSTする。SDKを配置せずに動かしたいとき用。
+ *   windows … Windowsのプリンタードライバー経由（window.print）。USB接続で使える。
+ *   mock    … 印刷せず画面にプレビューするだけ。プリンター無しでの動作確認用。
  *
  * どのバックエンドも共通で以下を持つ:
  *   ensureReady() -> Promise<void>
@@ -1697,12 +1792,112 @@ window.OMIKUJI_CONFIG = {
       .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
+  // ------------------------------------------------------------- windows
+
+  /**
+   * Windowsのプリンタードライバー経由で刷る。
+   *
+   * ネットワークを一切使わないので、USBケーブル1本で完結する。
+   * プリンター内蔵のWebサービス（ePOS-Print）はEthernet側にしか出ていないため、
+   * USB接続で刷るにはこの経路しかない。
+   *
+   * 絵はラスター送信と同じ Floyd–Steinberg で2値化してから貼る。
+   * ドライバー任せの網点にすると絵柄が潰れるため。
+   */
+  function WindowsBackend(cfg, hooks) {
+    this.cfg = cfg;
+    this.hooks = hooks || {};
+  }
+
+  WindowsBackend.prototype.describe = function () {
+    return 'Windowsのプリンタードライバー（USB接続）';
+  };
+
+  WindowsBackend.prototype.ensureReady = function () {
+    if (typeof global.print !== 'function') {
+      return Promise.reject(new Error('このブラウザでは印刷機能を使えません'));
+    }
+    return Promise.resolve();
+  };
+
+  WindowsBackend.prototype.printCanvas = function (canvas, printCfg) {
+    var self = this;
+    var sheet = document.getElementById('print-sheet');
+    if (!sheet) return Promise.reject(new Error('印刷用の領域が見つかりません（index.html を確認してください）'));
+
+    var mono = global.Raster.toMonoCanvas(canvas, {
+      threshold: printCfg.threshold,
+      invert: printCfg.invertBits
+    });
+
+    // 印字幅は mm で指定する。576ドット ÷ 203dpi = 72mm がTM-m30の80mm紙の印字幅。
+    var widthMm = printCfg.paperWidthMm || 72;
+    var sheetMm = printCfg.paperSizeMm || 80;   // ロール紙そのものの幅
+    // 印字後の紙送り（ドット）を mm に直して下余白にする
+    var padMm = (printCfg.feedUnitsAfter || 0) / 203 * 25.4;
+    // 用紙の長さは絵の高さから決める。
+    // CSS の @page は `size: 80mm auto` のような書き方ができない（無効になる）ので、
+    // 毎回ここで実寸を計算して差し込む。
+    var pageMm = mono.height * (widthMm / mono.width) + padMm;
+    setPageSize(sheetMm, pageMm);
+
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        sheet.innerHTML = '';
+        sheet.style.paddingBottom = padMm.toFixed(2) + 'mm';
+        img.style.width = widthMm + 'mm';
+        sheet.appendChild(img);
+
+        var done = false;
+        var timer = null;
+        var finish = function (err) {
+          if (done) return;
+          done = true;
+          global.removeEventListener('afterprint', onAfter);
+          if (timer) clearTimeout(timer);
+          sheet.innerHTML = '';
+          if (err) reject(err); else resolve();
+        };
+        var onAfter = function () { setTimeout(function () { finish(null); }, 200); };
+        global.addEventListener('afterprint', onAfter);
+
+        try {
+          // print() は印刷ジョブを投げ終わってから戻る
+          // （ダイアログが出る設定なら、閉じてから戻る）。
+          global.print();
+        } catch (e) {
+          finish(new Error('印刷を開始できませんでした: ' + e.message));
+          return;
+        }
+        // afterprint が飛ばない環境もあるので、戻ってきたら少し待って完了扱いにする
+        timer = setTimeout(function () { finish(null); }, 1200);
+      };
+      img.onerror = function () { reject(new Error('印刷用の画像を作れませんでした')); };
+      img.src = mono.toDataURL('image/png');
+    });
+  };
+
+  /** @page の用紙サイズを実寸で差し込む（レシートは1枚ごとに長さが変わるため）。 */
+  function setPageSize(widthMm, heightMm) {
+    var id = 'print-page-size';
+    var style = document.getElementById(id);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = id;
+      document.head.appendChild(style);
+    }
+    style.textContent = '@page { size: ' + widthMm.toFixed(2) + 'mm ' +
+                        heightMm.toFixed(2) + 'mm; margin: 0; }';
+  }
+
   // --------------------------------------------------------------- 生成
 
   function createBackend(cfg, hooks) {
     switch (cfg.backend) {
       case 'sdk': return new SdkBackend(cfg, hooks);
       case 'xml': return new XmlBackend(cfg, hooks);
+      case 'windows': return new WindowsBackend(cfg, hooks);
       case 'mock':
       default: return new MockBackend(cfg, hooks);
     }

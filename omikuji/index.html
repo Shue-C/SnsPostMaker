@@ -92,8 +92,9 @@
         <span>印刷方式</span>
         <select id="set-backend">
           <option value="mock">モック（印刷しない・動作確認用）</option>
-          <option value="sdk">ePOS SDK（推奨）</option>
-          <option value="xml">ePOS-Print XML 直接送信</option>
+          <option value="sdk">ePOS SDK（LAN接続・推奨）</option>
+          <option value="xml">ePOS-Print XML 直接送信（LAN接続）</option>
+          <option value="windows">Windowsのプリンタードライバー（USB接続）</option>
         </select>
       </label>
 
@@ -137,6 +138,10 @@
       </div>
     </div>
   </div>
+
+  <!-- Windowsドライバー経由（backend: 'windows'）で刷るときだけ中身が入る。
+       画面には出ず、印刷時だけ @media print で表示される。 -->
+  <div id="print-sheet" class="print-sheet" aria-hidden="true"></div>
 
   <!--
   実機で印刷する（backend: 'sdk'）場合は、Epson ePOS SDK for JavaScript に含まれる
