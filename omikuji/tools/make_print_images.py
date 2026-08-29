@@ -39,10 +39,16 @@ DESIGN = os.path.join(ROOT, 'design')
 OUT = os.path.join(ROOT, 'images')
 
 WIDTH = 416          # 58mm紙の印字幅（8の倍数）
-LAYOUT = 'trim'      # full | trim | minimal
-UNSHARP = (2.0, 180, 3)   # radius, percent, threshold
-CONTRAST = 1.35
-GAMMA = 0.88         # 1未満で中間調を暗くする（線を残す方向）
+LAYOUT = 'full'      # full | trim | minimal
+UNSHARP = (1.2, 260, 2)   # radius, percent, threshold
+CONTRAST = 1.30
+GAMMA = 0.95         # 1未満で中間調を暗くする（線を残す方向）
+
+# 2値化のしかた
+#   'threshold' … 単純な閾値。線画にはこちらが鮮明。既定。
+#   'dither'    … Floyd-Steinberg 誤差拡散。写真や本物の階調がある絵向け。
+BINARIZE = 'threshold'
+THRESHOLD = 135      # 'threshold' のときの境目。上げると線が太る
 
 
 def load_gray(path):
@@ -140,22 +146,37 @@ def to_print(path, width=WIDTH, layout=LAYOUT):
     return g
 
 
-def dither(g):
-    """Floyd-Steinberg で2値化（Pillow の convert('1') と同じ拡散）。"""
-    return g.convert('1', dither=Image.FLOYDSTEINBERG)
+def binarize(g, how=None, threshold=None):
+    """白黒2値にする。
+
+    この原画は隅々まで線画なので、誤差拡散をかけると線の周りに網点が散って
+    かえって汚くなる。単純な閾値のほうが鮮明に出るため、既定は 'threshold'。
+    写真や本物の階調がある絵を刷るときだけ 'dither' を使う。
+    """
+    how = how or BINARIZE
+    if how == 'dither':
+        return g.convert('1', dither=Image.FLOYDSTEINBERG)
+    t = THRESHOLD if threshold is None else threshold
+    return g.point(lambda v: 255 if v >= t else 0, mode='1')
 
 
 def main():
     args = [a for a in sys.argv[1:]]
     layout = LAYOUT
+    how = BINARIZE
     for a in list(args):
         if a in ('full', 'trim', 'minimal'):
             layout = a
             args.remove(a)
+        elif a in ('threshold', 'dither'):
+            how = a
+            args.remove(a)
+    globals()['BINARIZE'] = how
     width = int(args[0]) if args else WIDTH
     if width % 8:
         raise SystemExit('幅は8の倍数にしてください: %d' % width)
-    print('layout=%s  幅=%dドット（%.1fmm）' % (layout, width, width / 203 * 25.4))
+    print('layout=%s  2値化=%s  幅=%dドット（%.1fmm）'
+          % (layout, how, width, width / 203 * 25.4))
     os.makedirs(OUT, exist_ok=True)
     names = sorted(f for f in os.listdir(DESIGN)
                    if f.startswith('o_') and f.endswith('.png'))
@@ -166,7 +187,7 @@ def main():
         src = os.path.join(DESIGN, name)
         dst = os.path.join(OUT, num + '.png')
         g = to_print(src, width, layout)
-        bw = dither(g)
+        bw = binarize(g)
         bw.save(dst, optimize=True)
         black = sum(1 for v in bw.convert('L').tobytes() if v == 0)
         print('%-10s -> images/%-8s %dx%d = %.0f x %.0f mm  黒 %.1f%%  %d KB'
