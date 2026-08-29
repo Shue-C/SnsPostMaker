@@ -22,6 +22,10 @@ param(
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
+# 「今どのファイルが動いているか」を確かめるための目印。
+# アプリの設定パネルに出るバージョンと一致していれば、新旧の取り違えは無い。
+$OmikujiVersion = '2026-08-29 local-1'
+
 # --- 管理者権限がなければ昇格して起動し直す -----------------------------
 # http://+:PORT/ で待ち受けるには管理者権限が必要（localhost だけなら不要だが、
 # それでは iPad から見えない）。
@@ -227,7 +231,15 @@ Write-Host ''
 Write-Host '============================================================'
 Write-Host '  精霊魔法おみくじ  配信中' -ForegroundColor Cyan
 Write-Host '============================================================'
+Write-Host "  バージョン   : $OmikujiVersion"
 Write-Host "  公開フォルダ : $Root"
+if ($printReady) {
+  $defName = Get-DefaultPrinterName
+  if (-not $defName) { $defName = '（見つかりません）' }
+  Write-Host "  ローカル印刷 : 使えます / 既定のプリンター: $defName"
+} else {
+  Write-Host '  ローカル印刷 : 使えません（印刷方式 local は動きません）' -ForegroundColor Yellow
+}
 Write-Host ''
 if ($LocalOnly) {
   Write-Host '  このPCのブラウザで次を開いてください:'

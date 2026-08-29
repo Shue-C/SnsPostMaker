@@ -36,8 +36,8 @@ window.OMIKUJI_CONFIG = {
     // Windowsのプリンター名。空欄なら既定のプリンターへ刷る。
     // 設定パネルの一覧から選べるので、普段はここを触る必要はない。
     windowsPrinter: '',
-    localPrintPath: 'print',
-    localListPath: 'printers',
+    localPrintPath: '/print',
+    localListPath: '/printers',
 
     timeout: 60000
   },

@@ -10,7 +10,13 @@
 (function (global) {
   'use strict';
 
-  var SETTINGS_KEY = 'omikuji.settings.v1';
+  // 画面右上の設定パネルに出る。「今どのファイルが動いているか」を確かめるための目印。
+  var APP_VERSION = '2026-08-29 local-1';
+
+  // v1 から v2 に上げてある。ブラウザに保存された古い設定（印刷方式など）が
+  // 新しい config.js を上書きし続ける事故を避けるため、キーごと作り直す。
+  var SETTINGS_KEY = 'omikuji.settings.v2';
+  var OLD_SETTINGS_KEYS = ['omikuji.settings.v1'];
   var HISTORY_KEY = 'omikuji.history.v1';
   var HISTORY_MAX = 500;
 
@@ -286,10 +292,13 @@
     el.setInvert.checked = !!cfg.print.invertBits;
     fillPrinterNames(cfg.printer.windowsPrinter);
 
-    var info = ['接続: ' + backend.describe()];
+    var info = ['バージョン: ' + APP_VERSION];
+    info.push('印刷方式: ' + cfg.backend);
+    info.push('接続: ' + backend.describe());
     var rest = drawer.remaining();
     if (rest !== null) info.push('袋の残り: ' + rest + ' 枚');
-    info.push('用紙幅: ' + cfg.paper.widthDots + 'ドット');
+    info.push('用紙幅: ' + cfg.paper.widthDots + 'ドット（約' +
+              (cfg.paper.widthDots / 203 * 25.4).toFixed(1) + 'mm）');
     if (missingImages.length) {
       info.push('画像が見つからない項目: ' + missingImages.join(', ') +
                 '（プレースホルダーを印刷します）');
@@ -297,7 +306,8 @@
       info.push('おみくじ画像: 全' + cfg.items.length + '種を読み込み済み');
     }
     if (Object.keys(ov).length) {
-      info.push('※この端末の保存設定が config.js より優先されています');
+      info.push('※この端末の保存設定が config.js より優先されています。' +
+                'ファイルを入れ替えても効かないときは「保存設定を消す」を押してください。');
     }
     el.settingsInfo.textContent = info.join('\n');
 
@@ -364,6 +374,20 @@
       : '設定を反映しました（この端末には保存できないため、次回起動時は既定値に戻ります）。';
   }
 
+  /** 保存された設定を消して、config.js の値に戻す。 */
+  function clearSettings() {
+    sessionOverrides = null;
+    try {
+      global.localStorage.removeItem(SETTINGS_KEY);
+      OLD_SETTINGS_KEYS.forEach(function (k) { global.localStorage.removeItem(k); });
+    } catch (e) { /* localStorage が使えない環境では何もしなくてよい */ }
+    cfg = buildConfig();
+    backend = global.PrinterBackend.create(cfg, backendHooks);
+    openSettings();
+    el.settingsInfo.textContent =
+      '保存設定を消して config.js の値に戻しました。\n' + el.settingsInfo.textContent;
+  }
+
   function testPrint() {
     var canvas = global.Raster.makePlaceholder(
       { id: 'TEST', label: 'テスト印刷' }, cfg.paper.widthDots);
@@ -414,7 +438,8 @@
       setBackend: 'set-backend', setHost: 'set-host', setSdkPort: 'set-sdk-port',
       setPrinterName: 'set-printer-name',
       setXmlPort: 'set-xml-port', setInvert: 'set-invert', setTest: 'set-test',
-      setResetBag: 'set-reset-bag', setSave: 'set-save', setClose: 'set-close'
+      setResetBag: 'set-reset-bag', setClearSettings: 'set-clear-settings',
+      setSave: 'set-save', setClose: 'set-close'
     };
     Object.keys(ids).forEach(function (k) { el[k] = document.getElementById(ids[k]); });
 
@@ -432,6 +457,9 @@
       }
     };
     backend = global.PrinterBackend.create(cfg, backendHooks);
+    console.log('[omikuji] version=' + APP_VERSION +
+                ' backend=' + cfg.backend +
+                ' widthDots=' + cfg.paper.widthDots);
 
     fitCanvas();
     global.addEventListener('resize', fitCanvas);
@@ -467,6 +495,7 @@
     el.setClose.addEventListener('click', function () { el.settings.hidden = true; });
     el.setSave.addEventListener('click', saveSettings);
     el.setTest.addEventListener('click', testPrint);
+    el.setClearSettings.addEventListener('click', clearSettings);
     el.setResetBag.addEventListener('click', function () {
       drawer.reset();
       el.settingsInfo.textContent = '抽選をリセットしました。';
