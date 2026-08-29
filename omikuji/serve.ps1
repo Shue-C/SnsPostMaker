@@ -24,7 +24,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
 # 「今どのファイルが動いているか」を確かめるための目印。
 # アプリの設定パネルに出るバージョンと一致していれば、新旧の取り違えは無い。
-$OmikujiVersion = '2026-08-29 local-1'
+$OmikujiVersion = '2026-08-29 local-2'
 
 # --- 管理者権限がなければ昇格して起動し直す -----------------------------
 # http://+:PORT/ で待ち受けるには管理者権限が必要（localhost だけなら不要だが、
@@ -293,6 +293,19 @@ try {
     try {
       $route = $req.Url.AbsolutePath.TrimEnd('/')
 
+      # 今このポートで配信しているのが誰なのかを名乗る。
+      # kiosk.ps1 が、古い配信プロセスが居座っていないかを確かめるのに使う。
+      if ($route -eq '/__status') {
+        $json = '{"app":"omikuji"' +
+                ',"version":' + (ConvertTo-JsonText $OmikujiVersion) +
+                ',"root":' + (ConvertTo-JsonText $Root) +
+                ',"appVersion":' + (ConvertTo-JsonText $folderVersion) +
+                ',"widthDots":' + (ConvertTo-JsonText $folderWidth) +
+                ',"localPrint":' + $(if ($printReady) { 'true' } else { 'false' }) + '}'
+        Send-JsonResponse $res $json 200
+        continue
+      }
+
       # 使えるプリンターの一覧（設定パネルの選択肢になる）
       if ($route -eq '/printers') {
         $names = Get-PrinterNames
@@ -362,7 +375,9 @@ try {
         $res.ContentType = $type
         $res.ContentLength64 = $bytes.Length
         # 会場で差し替えたファイルが確実に反映されるようキャッシュさせない
-        $res.AddHeader('Cache-Control', 'no-store')
+        $res.AddHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+        $res.AddHeader('Pragma', 'no-cache')
+        $res.AddHeader('Expires', '0')
         $res.OutputStream.Write($bytes, 0, $bytes.Length)
         Write-Host ("200 {0}  ({1:N0} bytes)" -f $rel, $bytes.Length) -ForegroundColor DarkGray
       } else {

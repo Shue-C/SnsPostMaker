@@ -32,11 +32,78 @@ function Test-Port([int]$p) {
   } catch { return $false }
 }
 
-# --- 配信を起動（すでに動いていればそれを使う） --------------------------
+<#
+  そのポートで配信しているのが「このフォルダのおみくじ」かどうかを確かめる。
+
+  前回の配信プロセスは非表示で動いているので、閉じ忘れたまま残ることがある。
+  それを気づかずに使い回すと、フォルダを新しくしても古い画面が出続けるので、
+  必ず名乗らせてから使う。
+#>
+function Get-ServeStatus([int]$p) {
+  try {
+    $r = Invoke-WebRequest -Uri "http://localhost:$p/__status" -TimeoutSec 3 -UseBasicParsing
+    return ($r.Content | ConvertFrom-Json)
+  } catch { return $null }
+}
+
+# 自分が起こした serve.ps1 だけを止める（他のPowerShellには触らない）
+function Stop-ServeProcesses {
+  $n = 0
+  try {
+    Get-CimInstance Win32_Process -ErrorAction Stop |
+      Where-Object {
+        $_.Name -match '^(powershell|pwsh)\.exe$' -and
+        $_.CommandLine -and $_.CommandLine -like '*serve.ps1*' -and
+        $_.ProcessId -ne $PID
+      } |
+      ForEach-Object {
+        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+        $n++
+      }
+  } catch {}
+  if ($n -gt 0) { Start-Sleep -Milliseconds 700 }
+  return $n
+}
+
+# serve.ps1 のバージョンを読んでおき、ポートに居る配信と突き合わせる
+$expectedVersion = ''
+try {
+  $serveText = Get-Content -LiteralPath $Serve -Raw -ErrorAction Stop
+  if ($serveText -match "\`$OmikujiVersion\s*=\s*'([^']*)'") { $expectedVersion = $Matches[1] }
+} catch {}
+
+# --- 配信を起動 ----------------------------------------------------------
 $server = $null
+$needStart = $true
+
 if (Test-Port $Port) {
-  Write-Host "ポート $Port は既に配信中です。そのまま使います。" -ForegroundColor DarkGray
-} else {
+  $status = Get-ServeStatus $Port
+  if ($status -and $status.app -eq 'omikuji' -and
+      $status.root -eq $Root -and
+      ($expectedVersion -eq '' -or $status.version -eq $expectedVersion)) {
+    Write-Host "このフォルダの配信が既に動いています。そのまま使います。" -ForegroundColor DarkGray
+    $needStart = $false
+  } else {
+    if ($status -and $status.app -eq 'omikuji') {
+      Write-Host '古い配信プロセスが残っていました。止めて起動し直します。' -ForegroundColor Yellow
+      Write-Host ("  残っていたフォルダ : " + $status.root) -ForegroundColor DarkGray
+      Write-Host ("  残っていた版       : " + $status.version) -ForegroundColor DarkGray
+    } else {
+      Write-Host "ポート $Port を別のプログラムが使っています。" -ForegroundColor Yellow
+      Write-Host 'おみくじの古い配信であれば止めます。' -ForegroundColor Yellow
+    }
+    $stopped = Stop-ServeProcesses
+    if ($stopped -gt 0) { Write-Host "  $stopped 個の配信プロセスを止めました。" -ForegroundColor DarkGray }
+    if (Test-Port $Port) {
+      Write-Host "ポート $Port がまだ空きません。おみくじ以外のプログラムが使っています。" -ForegroundColor Red
+      Write-Host "別のポートで起動してください:  kiosk.bat -Port 8081"
+      Read-Host '　Enter キーで終了'
+      exit 1
+    }
+  }
+}
+
+if ($needStart) {
   Write-Host "配信を開始します（http://localhost:$Port/）..."
   $server = Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -PassThru -ArgumentList @(
     '-NoProfile', '-ExecutionPolicy', 'Bypass',
@@ -51,15 +118,26 @@ if (Test-Port $Port) {
   }
   if (-not $ok) {
     Write-Host "配信を開始できませんでした（ポート $Port）。" -ForegroundColor Red
-    Write-Host '他のアプリが同じポートを使っているかもしれません。'
     Write-Host "別のポートで試す例:  kiosk.bat -Port 8081"
     Read-Host '　Enter キーで終了'
     exit 1
   }
 }
 
+# 何を配信しているのかを画面に出す（フォルダの取り違えをここで潰す）
+$status = Get-ServeStatus $Port
+if ($status) {
+  Write-Host ("  公開フォルダ : " + $status.root) -ForegroundColor DarkGray
+  Write-Host ("  中身の版     : " + $status.appVersion) -ForegroundColor DarkGray
+  Write-Host ("  用紙幅       : " + $status.widthDots + " ドット") -ForegroundColor DarkGray
+  if ($expectedVersion -and $status.appVersion -and $status.appVersion -ne $expectedVersion) {
+    Write-Host '  !! フォルダの中身が古いです。フォルダごと入れ替え直してください。' -ForegroundColor Red
+  }
+}
+
 # --- Edge をキオスクモードで開く -----------------------------------------
-$url = "http://localhost:$Port/"
+# 末尾に起動時刻を付けて、ブラウザのキャッシュを確実に外す
+$url = "http://localhost:$Port/?v=" + [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $edgeArgs = @(
   '--kiosk', $url,
   '--edge-kiosk-type=fullscreen',   # InPrivateにせず、通常プロファイルで全画面
