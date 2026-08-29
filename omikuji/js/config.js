@@ -9,11 +9,14 @@ window.OMIKUJI_CONFIG = {
   /**
    * 印刷方式
    *   'mock'    … 印刷せず画面にプレビューを出すだけ（プリンター無しで動作確認できる）
+   *   'local'   … 配信スクリプト（serve.ps1）経由でESC/POSを送る。
+   *               USB/Bluetooth/LAN のどれでも使え、IPアドレスの設定も要らない。
+   *               ブラウザの印刷機能を使わないので、余白・ヘッダー・ダイアログが出ない。
    *   'sdk'     … Epson ePOS SDK for JavaScript 経由（LAN接続。epos-2.js が必要）
    *   'xml'     … ePOS-Print XML を直接POST（LAN接続。SDKを置かずに使える代替手段）
-   *   'windows' … Windowsのプリンタードライバー経由（USB接続。IPアドレスの設定が要らない）
+   *   'windows' … Windowsのプリンタードライバー経由（window.print）。localが使えないときの代替
    */
-  backend: 'mock',
+  backend: 'local',
 
   printer: {
     // プリンターのIPアドレス（本体の設定シートを印刷すると確認できます）
@@ -29,13 +32,21 @@ window.OMIKUJI_CONFIG = {
     xmlPort: 80,
     xmlPath: '/cgi-bin/epos/service.cgi',
 
+    // --- backend: 'local' 用 ---
+    // Windowsのプリンター名。空欄なら既定のプリンターへ刷る。
+    // 設定パネルの一覧から選べるので、普段はここを触る必要はない。
+    windowsPrinter: '',
+    localPrintPath: 'print',
+    localListPath: 'printers',
+
     timeout: 60000
   },
 
   paper: {
-    // TM-m30（80mm紙）の印字可能幅は 576ドット。
-    // 58mm紙にする場合は 420 に変更してください。必ず8の倍数にすること。
-    widthDots: 576
+    // 印字可能幅（ドット）。必ず8の倍数にすること。
+    //   58mm紙 … 416（TM-m30の印字可能幅420ドットを8の倍数に切り下げた値）
+    //   80mm紙 … 576
+    widthDots: 416
   },
 
   print: {
@@ -43,14 +54,17 @@ window.OMIKUJI_CONFIG = {
     brightness: 1.0,      // 0.1〜10.0（sdk時のみ有効）
     threshold: 128,       // xml/mock時のディザ閾値
     invertBits: false,    // 白黒が反転して印刷される場合に true にする
-    feedUnitsAfter: 60,   // 印字後の紙送り量（ドット）。カット位置の調整用
+    // 印字後の紙送り量（ドット）。203ドット = 25.4mm。
+    // カットは「カット位置まで送ってから」実行されるので、
+    // 下余白を足したいときだけ増やす。0 でちょうど良いことが多い。
+    feedUnitsAfter: 0,
     cut: true,
 
     // backend: 'windows' 用。ミリで指定する。
-    // paperWidthMm … 印字幅。80mm紙 = 576ドット ÷ 203dpi = 72mm。58mm紙なら 52 前後。
-    // paperSizeMm  … ロール紙そのものの幅。80mm紙なら 80、58mm紙なら 58。
-    paperWidthMm: 72,
-    paperSizeMm: 80,
+    // paperWidthMm … 印字幅。58mm紙 = 416ドット ÷ 203dpi = 52mm。80mm紙なら 72。
+    // paperSizeMm  … ロール紙そのものの幅。58mm紙なら 58、80mm紙なら 80。
+    paperWidthMm: 52,
+    paperSizeMm: 58,
 
     // 画像の下に共通のフッターを刷る場合はここを有効にする
     footer: {

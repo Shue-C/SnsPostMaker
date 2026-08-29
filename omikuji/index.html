@@ -92,9 +92,17 @@
         <span>印刷方式</span>
         <select id="set-backend">
           <option value="mock">モック（印刷しない・動作確認用）</option>
-          <option value="sdk">ePOS SDK（LAN接続・推奨）</option>
+          <option value="local">ローカル印刷サービス（USB/Bluetooth・推奨）</option>
+          <option value="sdk">ePOS SDK（LAN接続）</option>
           <option value="xml">ePOS-Print XML 直接送信（LAN接続）</option>
-          <option value="windows">Windowsのプリンタードライバー（USB接続）</option>
+          <option value="windows">Windowsのプリンタードライバー（代替）</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Windowsのプリンター</span>
+        <select id="set-printer-name">
+          <option value="">（既定のプリンター）</option>
         </select>
       </label>
 

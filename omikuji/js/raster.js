@@ -49,6 +49,9 @@
   function makePlaceholder(item, widthDots) {
     var w = floorTo8(widthDots);
     var h = Math.round(w * 1.4);
+    // 58mm紙（416ドット）でも80mm紙（576ドット）でも同じ見た目になるよう、
+    // すべての寸法を紙幅に比例させる。
+    var k = w / 576;
     var canvas = document.createElement('canvas');
     canvas.width = w;
     canvas.height = h;
@@ -57,21 +60,21 @@
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(20, 20, w - 40, h - 40);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(36, 36, w - 72, h - 72);
+    ctx.lineWidth = 6 * k;
+    ctx.strokeRect(20 * k, 20 * k, w - 40 * k, h - 40 * k);
+    ctx.lineWidth = 2 * k;
+    ctx.strokeRect(36 * k, 36 * k, w - 72 * k, h - 72 * k);
 
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'center';
-    ctx.font = '32px ' + MINCHO;
-    ctx.fillText('Ceria fi Ixtigna', w / 2, 130);
-    ctx.font = '120px ' + MINCHO;
-    ctx.fillText(item.id, w / 2, h / 2 + 20);
-    ctx.font = '40px ' + MINCHO;
-    ctx.fillText(item.label, w / 2, h / 2 + 110);
-    ctx.font = '24px sans-serif';
-    ctx.fillText('（画像未設定のプレースホルダー）', w / 2, h - 90);
+    ctx.font = Math.round(32 * k) + 'px ' + MINCHO;
+    ctx.fillText('Ceria fi Ixtigna', w / 2, 130 * k);
+    ctx.font = Math.round(120 * k) + 'px ' + MINCHO;
+    ctx.fillText(item.id, w / 2, h / 2 + 20 * k);
+    ctx.font = Math.round(40 * k) + 'px ' + MINCHO;
+    ctx.fillText(item.label, w / 2, h / 2 + 110 * k);
+    ctx.font = Math.round(24 * k) + 'px sans-serif';
+    ctx.fillText('（画像未設定のプレースホルダー）', w / 2, h - 90 * k);
 
     return canvas;
   }
@@ -127,10 +130,10 @@
   }
 
   /**
-   * canvas を 1bit ラスターに変換して base64 を返す。
+   * canvas を 1bit ラスターに変換して Uint8Array を返す。
    * 出力は 1画素=1bit、MSB先頭、1行あたり width/8 バイト、1 が黒ドット。
    */
-  function toRasterBase64(canvas, options) {
+  function toRasterBytes(canvas, options) {
     var d = dither(canvas, options);
     var w = d.width, h = d.height;
     var bytesPerRow = w / 8;
@@ -142,7 +145,13 @@
       }
     }
 
-    return { width: w, height: h, base64: bytesToBase64(out) };
+    return { width: w, height: h, bytesPerRow: bytesPerRow, bytes: out };
+  }
+
+  /** toRasterBytes の結果を base64 にしたもの（ePOS-Print XML 用）。 */
+  function toRasterBase64(canvas, options) {
+    var r = toRasterBytes(canvas, options);
+    return { width: r.width, height: r.height, base64: bytesToBase64(r.bytes) };
   }
 
   /**
@@ -195,8 +204,10 @@
     loadImage: loadImage,
     fitToWidth: fitToWidth,
     makePlaceholder: makePlaceholder,
+    toRasterBytes: toRasterBytes,
     toRasterBase64: toRasterBase64,
     toMonoCanvas: toMonoCanvas,
+    bytesToBase64: bytesToBase64,
     renderItem: renderItem
   };
 })(window);

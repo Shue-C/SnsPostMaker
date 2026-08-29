@@ -110,6 +110,7 @@
     if (ov.host) base.printer.host = ov.host;
     if (ov.sdkPort) base.printer.sdkPort = Number(ov.sdkPort);
     if (ov.xmlPort) base.printer.xmlPort = Number(ov.xmlPort);
+    if (typeof ov.windowsPrinter === 'string') base.printer.windowsPrinter = ov.windowsPrinter;
     if (typeof ov.invertBits === 'boolean') base.print.invertBits = ov.invertBits;
     return base;
   }
@@ -283,6 +284,7 @@
     el.setSdkPort.value = cfg.printer.sdkPort;
     el.setXmlPort.value = cfg.printer.xmlPort;
     el.setInvert.checked = !!cfg.print.invertBits;
+    fillPrinterNames(cfg.printer.windowsPrinter);
 
     var info = ['接続: ' + backend.describe()];
     var rest = drawer.remaining();
@@ -304,6 +306,44 @@
   }
 
   /**
+   * Windowsのプリンター一覧を配信スクリプトから取ってきて選択肢にする。
+   * 取れない場合（serve.ps1 以外で配信している等）は今の値だけ残す。
+   */
+  function fillPrinterNames(current) {
+    var sel = el.setPrinterName;
+    var reset = function (names, def) {
+      sel.innerHTML = '';
+      var head = document.createElement('option');
+      head.value = '';
+      head.textContent = def ? '（既定のプリンター：' + def + '）' : '（既定のプリンター）';
+      sel.appendChild(head);
+      names.forEach(function (n) {
+        var o = document.createElement('option');
+        o.value = n;
+        o.textContent = n;
+        sel.appendChild(o);
+      });
+      sel.value = current || '';
+      if (sel.value !== (current || '')) {
+        // 一覧に無い名前が保存されている場合も選べるようにしておく
+        var o = document.createElement('option');
+        o.value = current;
+        o.textContent = current + '（見つかりません）';
+        sel.appendChild(o);
+        sel.value = current;
+      }
+    };
+    reset(current ? [current] : [], null);
+    if (typeof fetch !== 'function') return;
+    fetch(cfg.printer.localListPath || 'printers')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (json) {
+        if (json && json.printers) reset(json.printers, json.defaultPrinter);
+      })
+      .catch(function () { /* 配信スクリプト以外で開いている場合は黙って諦める */ });
+  }
+
+  /**
    * 設定を反映する。保存できた場合もできなかった場合も、その場で
    * 接続先を作り直して効かせる（再読み込みしないので file:// でも使える）。
    */
@@ -313,6 +353,7 @@
       host: el.setHost.value.trim(),
       sdkPort: Number(el.setSdkPort.value) || undefined,
       xmlPort: Number(el.setXmlPort.value) || undefined,
+      windowsPrinter: el.setPrinterName.value,
       invertBits: el.setInvert.checked
     };
     var stored = saveJson(SETTINGS_KEY, sessionOverrides);
@@ -371,6 +412,7 @@
       settingsInfo: 'settings-info', historySummary: 'history-summary',
       historyList: 'history-list', setClearHistory: 'set-clear-history',
       setBackend: 'set-backend', setHost: 'set-host', setSdkPort: 'set-sdk-port',
+      setPrinterName: 'set-printer-name',
       setXmlPort: 'set-xml-port', setInvert: 'set-invert', setTest: 'set-test',
       setResetBag: 'set-reset-bag', setSave: 'set-save', setClose: 'set-close'
     };

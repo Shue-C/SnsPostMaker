@@ -3,7 +3,9 @@
  *
  *   sdk     … Epson ePOS SDK for JavaScript（epos-2.js）経由。ネットワーク接続時の推奨経路。
  *   xml     … ePOS-Print XML を直接HTTP POSTする。SDKを配置せずに動かしたいとき用。
- *   windows … Windowsのプリンタードライバー経由（window.print）。USB接続で使える。
+ *   local   … 配信スクリプト（serve.ps1）にESC/POSを渡してもらう。USB/Bluetooth接続用。
+ *             ブラウザの印刷機能を使わないので、余白もヘッダーもダイアログも出ない。
+ *   windows … Windowsのプリンタードライバー経由（window.print）。localが使えないときの代替。
  *   mock    … 印刷せず画面にプレビューするだけ。プリンター無しでの動作確認用。
  *
  * どのバックエンドも共通で以下を持つ:
@@ -287,6 +289,128 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
+  // --------------------------------------------------------------- local
+
+  /**
+   * 配信スクリプト（serve.ps1）の /print に ESC/POS を投げる。
+   *
+   * ブラウザの印刷機能を一切使わないので、
+   *   - 印刷ダイアログが一瞬映らない
+   *   - ブラウザが勝手に足す日時・タイトル・URLが刷られない
+   *   - ページ余白が入らず、画像の実寸ちょうどで刷れる
+   * という利点がある。同一オリジンへのPOSTなのでCORSの制約も無い。
+   *
+   * プリンターとの繋ぎ方（USB / Bluetooth / LAN）は Windows 側の
+   * プリンター設定の問題になるので、このバックエンドからは見えない。
+   */
+  function LocalBackend(cfg, hooks) {
+    this.cfg = cfg;
+    this.hooks = hooks || {};
+  }
+
+  LocalBackend.prototype.describe = function () {
+    var name = this.cfg.printer.windowsPrinter;
+    return 'ローカル印刷サービス（' + (name ? name : '既定のプリンター') + '）';
+  };
+
+  LocalBackend.prototype.ensureReady = function () {
+    return Promise.resolve();
+  };
+
+  /** 利用できるWindowsプリンターの一覧を取りに行く（設定画面用）。 */
+  LocalBackend.prototype.listPrinters = function () {
+    return fetch(this.cfg.printer.localListPath || 'printers')
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+  };
+
+  LocalBackend.prototype.printCanvas = function (canvas, printCfg) {
+    var p = this.cfg.printer;
+    var raster = global.Raster.toRasterBytes(canvas, {
+      threshold: printCfg.threshold,
+      invert: printCfg.invertBits
+    });
+    var data = buildEscPos(raster, printCfg);
+
+    return withTimeout(
+      fetch(p.localPrintPath || 'print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          printer: p.windowsPrinter || '',
+          data: global.Raster.bytesToBase64(data)
+        })
+      }).then(function (res) {
+        return res.json().catch(function () {
+          throw new Error('印刷サービスの応答を解釈できませんでした（HTTP ' + res.status + '）');
+        });
+      }).then(function (json) {
+        if (!json || !json.ok) {
+          throw new Error((json && json.error) || '印刷に失敗しました');
+        }
+      }).catch(function (err) {
+        if (err instanceof TypeError) {
+          throw new Error(
+            '印刷サービスに繋がりません。kiosk.bat / serve.bat から起動しているか確認してください。'
+          );
+        }
+        throw err;
+      }),
+      p.timeout || 60000,
+      '印刷応答がタイムアウトしました'
+    );
+  };
+
+  /**
+   * ラスターを ESC/POS のコマンド列に組み立てる。
+   *
+   *   ESC @         初期化
+   *   ESC a 0       左寄せ（ラスターは紙の左端から刷られる）
+   *   GS v 0 …      ラスタービットイメージ
+   *   ESC J n       n ドット紙送り
+   *   GS V 66 0     カット位置まで送ってカット
+   *
+   * GS v 0 はプリンターの受信バッファを超えると取りこぼすので、
+   * 高さ256ドットずつの帯に割って送る（継ぎ目は出ない）。
+   */
+  function buildEscPos(raster, printCfg) {
+    var parts = [];
+    var push = function (arr) { parts.push(Uint8Array.from(arr)); };
+
+    push([0x1b, 0x40]);        // ESC @
+    push([0x1b, 0x61, 0x00]);  // ESC a 0
+
+    var bpr = raster.bytesPerRow;
+    var band = 256;
+    for (var y = 0; y < raster.height; y += band) {
+      var rows = Math.min(band, raster.height - y);
+      push([0x1d, 0x76, 0x30, 0x00,
+            bpr & 0xff, (bpr >> 8) & 0xff,
+            rows & 0xff, (rows >> 8) & 0xff]);
+      parts.push(raster.bytes.subarray(y * bpr, (y + rows) * bpr));
+    }
+
+    var feed = printCfg.feedUnitsAfter || 0;
+    while (feed > 0) {
+      var n = Math.min(255, feed);
+      push([0x1b, 0x4a, n]);   // ESC J n
+      feed -= n;
+    }
+
+    if (printCfg.cut !== false) {
+      push([0x1d, 0x56, 0x42, 0x00]);  // GS V 66 0
+    }
+
+    var total = 0;
+    parts.forEach(function (a) { total += a.length; });
+    var out = new Uint8Array(total);
+    var at = 0;
+    parts.forEach(function (a) { out.set(a, at); at += a.length; });
+    return out;
+  }
+
   // ------------------------------------------------------------- windows
 
   /**
@@ -392,6 +516,7 @@
     switch (cfg.backend) {
       case 'sdk': return new SdkBackend(cfg, hooks);
       case 'xml': return new XmlBackend(cfg, hooks);
+      case 'local': return new LocalBackend(cfg, hooks);
       case 'windows': return new WindowsBackend(cfg, hooks);
       case 'mock':
       default: return new MockBackend(cfg, hooks);
