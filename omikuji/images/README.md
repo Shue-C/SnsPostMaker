@@ -10,9 +10,10 @@
 
 ```bash
 cd omikuji
-python3 tools/make_print_images.py            # full + 閾値（既定）
+python3 tools/make_print_images.py            # 既定（full・閾値135・bold）
+python3 tools/make_print_images.py bolder     # もっと濃く
+python3 tools/make_print_images.py none       # 太らせない（元の細さ）
 python3 tools/make_print_images.py dither     # 誤差拡散にする
-python3 tools/make_print_images.py trim       # 段を間引く
 python3 tools/make_print_images.py full 576   # 80mm紙
 ```
 
@@ -57,7 +58,29 @@ python3 tools/make_print_images.py full 576   # 80mm紙
 既定は単純な閾値（`THRESHOLD = 135`）です。挿絵も線画なので閾値のほうが鮮明に出ます。
 
 写真や本物の階調がある絵を刷るときだけ `dither` を指定してください。
-線が細って見えるときは `THRESHOLD` を上げる（太る）、潰れるときは下げます。
+
+### 掠れる・薄いとき
+
+サーマルヘッドは**1ドット幅の線だと熱が回りきらず、掠れて出る**ことがあります。
+2ドットにすると同じ濃度設定でもはっきり出るので、線を太らせる機能を入れてあります。
+
+| 指定 | 内容 | 黒の割合 |
+|---|---|---|
+| `none` | そのまま | 12.4% |
+| **`bold`（既定）** | 右へ1ドット広げる | **18.3%** |
+| `bolder` | 右と下へ1ドットずつ | 22.7% |
+
+横に広げるほうが縦より字形が崩れにくいので、既定は `bold` です。
+`bolder` はいちばん濃くなりますが、画数の多い字（嬉・魔・繋など）が埋まりやすくなります。
+
+`THRESHOLD`（既定135）でも調整できますが、こちらは効きが小さく
+（135→175で黒12.4%→13.8%）、太らせるほうが確実です。
+
+**プリンター側の印字濃度も上げられます。**
+Windows の **TM-m30 Utility** の印字濃度設定で調整してください。
+こちらは字形をまったく変えずに全体を濃くできるので、**まずはこちらを試すのが安全**です。
+それでも足りない場合に `bolder` を使ってください。
+なお感熱紙の銘柄によっても発色はかなり変わります。
 
 ## 文字の大きさの目安
 

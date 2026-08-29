@@ -31,7 +31,7 @@
 """
 import os
 import sys
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageChops, ImageEnhance, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -49,6 +49,12 @@ GAMMA = 0.95         # 1未満で中間調を暗くする（線を残す方向�
 #   'dither'    … Floyd-Steinberg 誤差拡散。写真や本物の階調がある絵向け。
 BINARIZE = 'threshold'
 THRESHOLD = 135      # 'threshold' のときの境目。上げると線が太る
+
+# 線を太らせて濃く刷る
+#   'none'   … そのまま
+#   'bold'   … 右へ1ドット広げる（既定）。線が1ドットだと熱が回りきらず掠れるため
+#   'bolder' … 右と下へ1ドットずつ。いちばん濃いが、画数の多い字は埋まりやすい
+THICKEN = 'bold'
 
 
 def load_gray(path):
@@ -146,6 +152,33 @@ def to_print(path, width=WIDTH, layout=LAYOUT):
     return g
 
 
+def grow(a, dx, dy):
+    """黒を dx, dy 方向へ1ドット広げる。"""
+    o = ImageChops.offset(a, dx, dy)
+    if dx:
+        o.paste(255, (0, 0, dx, a.height))
+    if dy:
+        o.paste(255, (0, 0, a.width, dy))
+    return ImageChops.darker(a, o)
+
+
+def thicken(bw, how=None):
+    """線を太らせる。
+
+    サーマルヘッドは1ドット幅の線だと熱が回りきらず、掠れて出ることがある。
+    2ドットにすると同じ濃度設定でもはっきり出る。
+    横に広げるほうが縦より字形が崩れにくいので既定は 'bold'。
+    """
+    how = THICKEN if how is None else how
+    if how == 'none':
+        return bw
+    a = bw.convert('L')
+    a = grow(a, 1, 0)
+    if how == 'bolder':
+        a = grow(a, 0, 1)
+    return a.point(lambda v: 255 if v >= 128 else 0, mode='1')
+
+
 def binarize(g, how=None, threshold=None):
     """白黒2値にする。
 
@@ -164,6 +197,7 @@ def main():
     args = [a for a in sys.argv[1:]]
     layout = LAYOUT
     how = BINARIZE
+    thick = THICKEN
     for a in list(args):
         if a in ('full', 'trim', 'minimal'):
             layout = a
@@ -171,12 +205,16 @@ def main():
         elif a in ('threshold', 'dither'):
             how = a
             args.remove(a)
+        elif a in ('none', 'bold', 'bolder'):
+            thick = a
+            args.remove(a)
     globals()['BINARIZE'] = how
+    globals()['THICKEN'] = thick
     width = int(args[0]) if args else WIDTH
     if width % 8:
         raise SystemExit('幅は8の倍数にしてください: %d' % width)
-    print('layout=%s  2値化=%s  幅=%dドット（%.1fmm）'
-          % (layout, how, width, width / 203 * 25.4))
+    print('layout=%s  2値化=%s  太らせ=%s  幅=%dドット（%.1fmm）'
+          % (layout, how, thick, width, width / 203 * 25.4))
     os.makedirs(OUT, exist_ok=True)
     names = sorted(f for f in os.listdir(DESIGN)
                    if f.startswith('o_') and f.endswith('.png'))
@@ -187,7 +225,7 @@ def main():
         src = os.path.join(DESIGN, name)
         dst = os.path.join(OUT, num + '.png')
         g = to_print(src, width, layout)
-        bw = binarize(g)
+        bw = thicken(binarize(g))
         bw.save(dst, optimize=True)
         black = sum(1 for v in bw.convert('L').tobytes() if v == 0)
         print('%-10s -> images/%-8s %dx%d = %.0f x %.0f mm  黒 %.1f%%  %d KB'
