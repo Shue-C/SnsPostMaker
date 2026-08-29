@@ -10,9 +10,9 @@
 
 ```bash
 cd omikuji
-python3 tools/make_print_images.py            # 既定（full・閾値135・bold）
-python3 tools/make_print_images.py bolder     # もっと濃く
-python3 tools/make_print_images.py none       # 太らせない（元の細さ）
+python3 tools/make_print_images.py            # 既定（full・閾値135・太らせなし）
+python3 tools/make_print_images.py bold       # 濃くする
+python3 tools/make_print_images.py bolder     # もっと濃くする
 python3 tools/make_print_images.py dither     # 誤差拡散にする
 python3 tools/make_print_images.py full 576   # 80mm紙
 ```
@@ -66,11 +66,11 @@ python3 tools/make_print_images.py full 576   # 80mm紙
 
 | 指定 | 内容 | 黒の割合 |
 |---|---|---|
-| `none` | そのまま | 12.4% |
-| **`bold`（既定）** | 右へ1ドット広げる | **18.3%** |
+| **`none`（既定）** | そのまま | **12.4%** |
+| `bold` | 右へ1ドット広げる | 18.3% |
 | `bolder` | 右と下へ1ドットずつ | 22.7% |
 
-横に広げるほうが縦より字形が崩れにくいので、既定は `bold` です。
+横に広げるほうが縦より字形が崩れにくいので、太らせるなら `bold` から試してください。
 `bolder` はいちばん濃くなりますが、画数の多い字（嬉・魔・繋など）が埋まりやすくなります。
 
 `THRESHOLD`（既定135）でも調整できますが、こちらは効きが小さく

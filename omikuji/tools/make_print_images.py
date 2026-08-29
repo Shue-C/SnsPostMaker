@@ -51,10 +51,10 @@ BINARIZE = 'threshold'
 THRESHOLD = 135      # 'threshold' のときの境目。上げると線が太る
 
 # 線を太らせて濃く刷る
-#   'none'   … そのまま
-#   'bold'   … 右へ1ドット広げる（既定）。線が1ドットだと熱が回りきらず掠れるため
+#   'none'   … そのまま（既定）
+#   'bold'   … 右へ1ドット広げる。線が1ドットだと熱が回りきらず掠れるため
 #   'bolder' … 右と下へ1ドットずつ。いちばん濃いが、画数の多い字は埋まりやすい
-THICKEN = 'bold'
+THICKEN = 'none'
 
 
 def load_gray(path):
