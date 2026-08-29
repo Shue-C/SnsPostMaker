@@ -231,8 +231,32 @@ Write-Host ''
 Write-Host '============================================================'
 Write-Host '  精霊魔法おみくじ  配信中' -ForegroundColor Cyan
 Write-Host '============================================================'
+# 配信しようとしているフォルダが本当に新しいものかを、起動時に自分で確かめる。
+# 「ファイルを入れ替えたのに変わらない」の大半は、古いフォルダを配信していることが原因。
+$folderVersion = ''
+$folderWidth = ''
+try {
+  $appJs = Get-Content -LiteralPath (Join-Path $Root 'js\app.js') -Raw -ErrorAction Stop
+  if ($appJs -match "APP_VERSION\s*=\s*'([^']*)'") { $folderVersion = $Matches[1] }
+} catch {}
+try {
+  $cfgJs = Get-Content -LiteralPath (Join-Path $Root 'js\config.js') -Raw -ErrorAction Stop
+  if ($cfgJs -match 'widthDots:\s*(\d+)') { $folderWidth = $Matches[1] }
+} catch {}
+
 Write-Host "  バージョン   : $OmikujiVersion"
 Write-Host "  公開フォルダ : $Root"
+if ($folderVersion -and $folderVersion -ne $OmikujiVersion) {
+  Write-Host "  !! 中身が古いです : js/app.js は $folderVersion" -ForegroundColor Red
+  Write-Host '     serve.ps1 だけ新しく、他のファイルが古いフォルダです。' -ForegroundColor Red
+  Write-Host '     フォルダごと入れ替え直してください。' -ForegroundColor Red
+} elseif ($folderVersion) {
+  Write-Host "  中身の版     : $folderVersion（一致）"
+}
+if ($folderWidth) {
+  $mm = [Math]::Round([double]$folderWidth / 203 * 25.4, 1)
+  Write-Host "  用紙幅       : $folderWidth ドット（約 $mm mm）"
+}
 if ($printReady) {
   $defName = Get-DefaultPrinterName
   if (-not $defName) { $defName = '（見つかりません）' }

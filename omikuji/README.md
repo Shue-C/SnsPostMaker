@@ -542,9 +542,36 @@ items: [
 
 ### ① 古いファイルが動いている
 
-設定パネルの「バージョン」と、`serve.ps1` の黒い画面に出る「バージョン」が
-一致しているか見てください。食い違っていたら、**古いフォルダの `kiosk.bat` を
-起動しています**。黒い画面の「公開フォルダ」に出ているパスを確認してください。
+`kiosk.bat` の黒い画面が、起動時に自分で確かめて表示します。
+
+```
+  バージョン   : 2026-08-29 local-1
+  公開フォルダ : D:\claude\SnsPostMaker\omikuji
+  中身の版     : 2026-08-29 local-1（一致）
+  用紙幅       : 416 ドット（約 52.1 mm）
+```
+
+`!! 中身が古いです` と赤字で出たら、そのフォルダの中身が古いということです。
+「公開フォルダ」のパスも確認してください（別の場所の古いコピーを起動していないか）。
+
+ファイルを取り直すときは、**ブランチを間違えないこと**が重要です。
+`master` には最新のおみくじアプリは入っていません。
+
+```bash
+cd /d D:\claude\SnsPostMaker
+git fetch origin
+git checkout claude/ipad-omikuji-receipt-printer-tjft20
+git pull origin claude/ipad-omikuji-receipt-printer-tjft20
+
+rem 取れたか確認（416 と出れば最新）
+findstr widthDots omikuji\js\config.js
+```
+
+ZIPで落とす場合は、ブランチを明示したこのURLから取得してください。
+
+```
+https://github.com/Shue-C/SnsPostMaker/archive/refs/heads/claude/ipad-omikuji-receipt-printer-tjft20.zip
+```
 
 ### ② ブラウザに保存された古い設定が勝っている
 
