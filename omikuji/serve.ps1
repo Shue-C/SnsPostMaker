@@ -24,7 +24,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
 # 「今どのファイルが動いているか」を確かめるための目印。
 # アプリの設定パネルに出るバージョンと一致していれば、新旧の取り違えは無い。
-$OmikujiVersion = '2026-08-29 local-2'
+$OmikujiVersion = '2026-08-29 art-1'
 
 # --- 管理者権限がなければ昇格して起動し直す -----------------------------
 # http://+:PORT/ で待ち受けるには管理者権限が必要（localhost だけなら不要だが、
